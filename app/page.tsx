@@ -12,6 +12,8 @@ import {
   Sparkles,
   Users,
   Zap,
+  UserCircle2,
+  BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,29 +23,65 @@ import { createClient } from "@/lib/supabase/server";
 import {
   AnimatedCounter,
   RevealOnScroll,
-  StaggerChildren,
 } from "@/app/components/landing-animations";
 
-type Step = {
+type FlowStep = {
+  step: number;
   title: string;
   body: string;
   Icon: LucideIcon;
 };
 
-const steps: Step[] = [
+const userSteps: FlowStep[] = [
   {
-    title: "Start with what is true",
-    body: "No clinical intake, no performance. Share what is happening in your own words and Alongly shapes enough context to begin gently.",
+    step: 1,
+    title: "Create a free account",
+    body: "Sign up as a \"User\" — the person looking for support. It takes under a minute and there's no lengthy form.",
+    Icon: UserCircle2,
+  },
+  {
+    step: 2,
+    title: "Chat with the AI — answer 5 questions",
+    body: "Our AI guide asks you five gentle questions about what you're going through, how you're feeling, and the kind of support that helps you most. No pressure — answer at your own pace.",
     Icon: MessageCircleHeart,
   },
   {
-    title: "Meet a better-fit person",
-    body: "Alongly looks for a real companion whose lived experience and support style match the moment, not just a keyword.",
+    step: 3,
+    title: "Get matched with a real companion",
+    body: "Based on your answers, Alongly finds a human companion whose lived experience and support style fit your situation. This usually takes around 3 minutes.",
     Icon: HandHeart,
   },
   {
-    title: "Begin without retelling it all",
-    body: "Your companion gets a short briefing before the chat, so the conversation can start with care instead of repetition.",
+    step: 4,
+    title: "Start the conversation — no recap needed",
+    body: "Your companion receives a short briefing before the chat begins, so you don't have to re-explain everything from scratch. The conversation starts with care, not questions.",
+    Icon: NotebookText,
+  },
+];
+
+const companionSteps: FlowStep[] = [
+  {
+    step: 1,
+    title: "Sign up as a companion",
+    body: "Choose \"Become a Companion\" and create your account. You're volunteering your time and lived experience — no therapy license required.",
+    Icon: BadgeCheck,
+  },
+  {
+    step: 2,
+    title: "Share your story & support style",
+    body: "Answer a few questions about what you've been through and how you like to support people. This is how Alongly finds the right user-companion fit — your experiences matter here.",
+    Icon: MessageCircleHeart,
+  },
+  {
+    step: 3,
+    title: "Get notified when there's a match",
+    body: "When a user's situation aligns with your experience and you're available, Alongly surfaces you as a match. You choose whether to accept each conversation — no obligation.",
+    Icon: Users,
+  },
+  {
+    step: 4,
+    title: "Read the briefing, then chat",
+    body: "Before the session starts, you'll see a short AI-generated briefing about what the user is going through. This context lets you show up prepared and skip the awkward \"so what's wrong?\" opener.",
     Icon: NotebookText,
   },
 ];
@@ -70,19 +108,24 @@ const faqs = [
       "Alongly is a peer support app for heavy days. It helps you share what is going on, then connects you with a real companion for an honest, unhurried conversation.",
   },
   {
-    question: "How are companions selected?",
+    question: "Do I need to log in to Jitsi for the voice call?",
     answer:
-      "Companions share what they have been through and the kind of support style they can offer. Alongly uses that context, your situation, and companion availability to help create a better-fit match.",
+      "Yes. Alongly's voice calls run through a private Jitsi meeting room, and both the user and the companion need to be signed in to Jitsi before the call will connect. Text chat works without it — Jitsi sign-in only matters when one of you wants to switch to voice. If a call won't start, the most common reason is that one side hasn't completed the Jitsi login yet.",
   },
   {
-    question: "Is Alongly free?",
+    question: "How long does a typical conversation last?",
     answer:
-      "Alongly is free to start in this early version. If paid features are introduced later, pricing will be shown clearly before anything is charged.",
+      "There's no timer. Most first conversations settle into roughly 30 to 60 minutes, but some are shorter and some run longer. You and your companion decide together when it feels like a natural place to pause.",
   },
   {
-    question: "Is it private?",
+    question: "What if the match doesn't feel right?",
     answer:
-      "Alongly is designed for private one-to-one support, not public posting. Your matched companion can see the short briefing and messages needed for the conversation, so avoid sharing details you would not want another person to know.",
+      "You can end the conversation at any time, no awkwardness required. From there, you can request a new match — your earlier briefing carries over so you don't have to start from zero again.",
+  },
+  {
+    question: "Can I stay anonymous?",
+    answer:
+      "Yes. You don't need to share your real name with your companion — most people use a first name, nickname, or any handle they're comfortable with. Alongly only needs an email for your account itself.",
   },
   {
     question: "What happens in a crisis?",
@@ -222,7 +265,7 @@ export default async function LandingPage() {
       <section
         id="how-it-works"
         aria-labelledby="how-it-works-heading"
-        className="relative z-10 mx-auto flex w-full max-w-6xl scroll-mt-16 flex-col gap-9 px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
+        className="relative z-10 mx-auto flex w-full max-w-6xl scroll-mt-16 flex-col gap-12 px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
       >
         <RevealOnScroll className="max-w-2xl">
           <p className="mb-3 text-sm font-semibold text-[#5d9b91]">
@@ -232,38 +275,138 @@ export default async function LandingPage() {
             id="how-it-works-heading"
             className="text-3xl font-semibold leading-tight text-[#243a34] sm:text-4xl"
           >
-            Built for the moment before you know what to ask for.
+            Two sides. One conversation.
           </h2>
           <p className="mt-4 max-w-xl text-base leading-7 text-[#65766f]">
-            The product stays quiet in the background and helps the first human
-            minute feel less abrupt.
+            Alongly works for both people who need support and people who want to
+            offer it. Here&apos;s exactly what happens on each side — step by
+            step.
           </p>
         </RevealOnScroll>
 
-        <StaggerChildren className="relative">
-          <ol className="grid">
-            {steps.map(({ title, body, Icon }) => (
-              <li
-                className="stagger-item process-step group relative border-t border-[#dce8e2] py-8 last:border-b"
-                key={title}
-              >
-                <div className="relative z-10 flex items-start gap-4">
-                  <span className="process-icon grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[#d6e7e0] bg-[#f4faf7] text-[#6da69b] transition group-hover:border-[#9fc9bf]">
-                    <Icon aria-hidden="true" size={19} strokeWidth={2.1} />
-                  </span>
-                  <div>
-                    <h3 className="text-2xl font-semibold leading-tight text-[#243a34]">
-                      {title}
-                    </h3>
-                    <p className="mt-3 max-w-2xl text-sm leading-7 text-[#65766f] sm:text-base">
-                      {body}
-                    </p>
-                  </div>
+        {/* Two-column flow grid */}
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch">
+          {/* USER FLOW */}
+          <RevealOnScroll className="h-full">
+            <div className="flex h-full flex-col gap-6 rounded-2xl border border-[#dce8e2] bg-white p-6 shadow-sm sm:p-8">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#eef8f4] text-[#5d9b91]">
+                  <UserCircle2 aria-hidden="true" size={20} strokeWidth={2} />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-[#5d9b91]">
+                    For you — the person seeking support
+                  </p>
+                  <h3 className="text-xl font-semibold text-[#243a34]">
+                    User flow
+                  </h3>
                 </div>
-              </li>
-            ))}
-          </ol>
-        </StaggerChildren>
+              </div>
+
+              <ol className="grid flex-1 gap-0 content-start">
+                {userSteps.map(({ step, title, body, Icon }) => (
+                  <li key={step} className="group relative flex gap-4 border-t border-[#edf3f0] py-5 first:border-0">
+                    <div className="flex flex-col items-center">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f0f8f5] text-sm font-bold text-[#5d9b91] ring-1 ring-[#cbe6df]">
+                        {step}
+                      </span>
+                      {step < userSteps.length && (
+                        <span className="mt-1 flex-1 w-px bg-[#dce8e2]" />
+                      )}
+                    </div>
+                    <div className="pb-2">
+                      <div className="flex items-center gap-2">
+                        <Icon aria-hidden="true" size={15} strokeWidth={2.1} className="text-[#78afa4]" />
+                        <h4 className="text-base font-semibold text-[#243a34]">
+                          {title}
+                        </h4>
+                      </div>
+                      <p className="mt-1.5 text-sm leading-6 text-[#65766f]">
+                        {body}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+
+              <Link
+                href="/signup?role=user"
+                className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#78afa4] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#659f94]"
+              >
+                Find a companion
+                <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />
+              </Link>
+            </div>
+          </RevealOnScroll>
+
+          {/* COMPANION FLOW */}
+          <RevealOnScroll className="h-full">
+            <div className="flex h-full flex-col gap-6 rounded-2xl border border-[#dce8e2] bg-white p-6 shadow-sm sm:p-8">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#f4f0fb] text-[#8b6fb5]">
+                  <HandHeart aria-hidden="true" size={20} strokeWidth={2} />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-[#8b6fb5]">
+                    For you — the human volunteer
+                  </p>
+                  <h3 className="text-xl font-semibold text-[#243a34]">
+                    Companion flow
+                  </h3>
+                </div>
+              </div>
+
+              <ol className="grid flex-1 gap-0 content-start">
+                {companionSteps.map(({ step, title, body, Icon }) => (
+                  <li key={step} className="group relative flex gap-4 border-t border-[#edf3f0] py-5 first:border-0">
+                    <div className="flex flex-col items-center">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f5f0fb] text-sm font-bold text-[#8b6fb5] ring-1 ring-[#d9cef0]">
+                        {step}
+                      </span>
+                      {step < companionSteps.length && (
+                        <span className="mt-1 flex-1 w-px bg-[#dce8e2]" />
+                      )}
+                    </div>
+                    <div className="pb-2">
+                      <div className="flex items-center gap-2">
+                        <Icon aria-hidden="true" size={15} strokeWidth={2.1} className="text-[#8b6fb5]" />
+                        <h4 className="text-base font-semibold text-[#243a34]">
+                          {title}
+                        </h4>
+                      </div>
+                      <p className="mt-1.5 text-sm leading-6 text-[#65766f]">
+                        {body}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+
+              <Link
+                href="/signup?role=companion"
+                className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#d9cef0] bg-[#f5f0fb] px-5 py-2.5 text-sm font-bold text-[#6b4fa8] transition hover:bg-[#ede6f8]"
+              >
+                Become a companion
+                <HandHeart aria-hidden="true" size={16} strokeWidth={2.2} />
+              </Link>
+            </div>
+          </RevealOnScroll>
+        </div>
+
+        {/* Where both flows meet */}
+        <RevealOnScroll>
+          <div className="rounded-2xl border border-[#dce8e2] bg-[#f8fbf9] px-6 py-6 sm:px-8 sm:py-7">
+            <p className="mb-2 text-sm font-semibold text-[#5d9b91]">Where the two flows meet</p>
+            <p className="max-w-3xl text-sm leading-7 text-[#65766f]">
+              Once the AI briefing is ready, both sides enter the same private chat room.
+              The user lands in a conversation where someone already understands the weight of what&apos;s
+              going on. The companion lands prepared — not guessing. When either of you wants
+              to move from text to voice, the room opens a private Jitsi meeting — the user and
+              the companion both need to be signed in to Jitsi for the call to connect.
+              That&apos;s the whole product: a quieter, smoother path to a real human moment.
+            </p>
+          </div>
+        </RevealOnScroll>
       </section>
 
       <section
