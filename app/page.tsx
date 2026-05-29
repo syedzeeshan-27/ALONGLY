@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   ArrowRight,
-  Check,
   Clock,
   HandHeart,
   Heart,
@@ -12,84 +11,38 @@ import {
   Sparkles,
   Users,
   Zap,
-  UserCircle2,
-  BadgeCheck,
-  type LucideIcon,
 } from "lucide-react";
 
 import { getProfileRole, roleRedirectPath } from "@/lib/auth";
 import { FaqAccordion } from "@/app/components/faq-accordion";
 import { createClient } from "@/lib/supabase/server";
 import {
-  AnimatedCounter,
   RevealOnScroll,
 } from "@/app/components/landing-animations";
+import { BrandWordmark } from "@/app/components/brand-logo";
 
-type FlowStep = {
-  step: number;
-  title: string;
-  body: string;
-  Icon: LucideIcon;
-};
-
-const userSteps: FlowStep[] = [
+const howItWorksSteps = [
   {
-    step: 1,
-    title: "Create a free account",
-    body: "Sign up as a \"User\" — the person looking for support. It takes under a minute and there's no lengthy form.",
-    Icon: UserCircle2,
-  },
-  {
-    step: 2,
-    title: "Chat with the AI — answer 5 questions",
-    body: "Our AI guide asks you five gentle questions about what you're going through, how you're feeling, and the kind of support that helps you most. No pressure — answer at your own pace.",
     Icon: MessageCircleHeart,
+    step: "01",
+    detail: "2 minutes",
+    title: "Answer 5 questions",
+    body: "Share the shape of the day without filling out a long intake.",
   },
   {
-    step: 3,
-    title: "Get matched with a real companion",
-    body: "Based on your answers, Alongly finds a human companion whose lived experience and support style fit your situation. This usually takes around 3 minutes.",
+    Icon: Sparkles,
+    step: "02",
+    detail: "~3 min",
+    title: "Get matched in ~3 min",
+    body: "Alongly turns your answers into context and finds a real companion.",
+  },
+  {
     Icon: HandHeart,
+    step: "03",
+    detail: "No recap",
+    title: "Start without re-explaining",
+    body: "Your companion sees the brief first, so the chat begins with care.",
   },
-  {
-    step: 4,
-    title: "Start the conversation — no recap needed",
-    body: "Your companion receives a short briefing before the chat begins, so you don't have to re-explain everything from scratch. The conversation starts with care, not questions.",
-    Icon: NotebookText,
-  },
-];
-
-const companionSteps: FlowStep[] = [
-  {
-    step: 1,
-    title: "Sign up as a companion",
-    body: "Choose \"Become a Companion\" and create your account. You're volunteering your time and lived experience — no therapy license required.",
-    Icon: BadgeCheck,
-  },
-  {
-    step: 2,
-    title: "Share your story & support style",
-    body: "Answer a few questions about what you've been through and how you like to support people. This is how Alongly finds the right user-companion fit — your experiences matter here.",
-    Icon: MessageCircleHeart,
-  },
-  {
-    step: 3,
-    title: "Get notified when there's a match",
-    body: "When a user's situation aligns with your experience and you're available, Alongly surfaces you as a match. You choose whether to accept each conversation — no obligation.",
-    Icon: Users,
-  },
-  {
-    step: 4,
-    title: "Read the briefing, then chat",
-    body: "Before the session starts, you'll see a short AI-generated briefing about what the user is going through. This context lets you show up prepared and skip the awkward \"so what's wrong?\" opener.",
-    Icon: NotebookText,
-  },
-];
-
-const stats = [
-  { value: 100, suffix: "%", label: "Human conversations" },
-  { value: 3, suffix: " min", label: "Average match time" },
-  { value: 0, suffix: "", label: "Bots involved", display: "Zero" },
 ];
 
 const trustPoints = [
@@ -97,6 +50,24 @@ const trustPoints = [
   { Icon: Users, text: "Real companions" },
   { Icon: Clock, text: "No waitlists" },
   { Icon: Zap, text: "Free to start" },
+];
+
+const whyAlonglyCards = [
+  {
+    Icon: MessageCircleHeart,
+    title: "Real experience, not training.",
+    body: "Your companion isn't certified. They've just been there.",
+  },
+  {
+    Icon: NotebookText,
+    title: "No pressure to perform your pain.",
+    body: "You don't have to explain why it feels big. It just does.",
+  },
+  {
+    Icon: HandHeart,
+    title: "A bridge, not a destination.",
+    body: "Not therapy, not a hotline. Just a real person for the moment you're in.",
+  },
 ];
 
 
@@ -118,14 +89,9 @@ const faqs = [
       "There's no timer. Most first conversations settle into roughly 30 to 60 minutes, but some are shorter and some run longer. You and your companion decide together when it feels like a natural place to pause.",
   },
   {
-    question: "What if the match doesn't feel right?",
+    question: "What happens after the AI briefing is ready?",
     answer:
-      "You can end the conversation at any time, no awkwardness required. From there, you can request a new match — your earlier briefing carries over so you don't have to start from zero again.",
-  },
-  {
-    question: "Can I stay anonymous?",
-    answer:
-      "Yes. You don't need to share your real name with your companion — most people use a first name, nickname, or any handle they're comfortable with. Alongly only needs an email for your account itself.",
+      "You and your companion enter the same private room. Your companion sees a short brief first, so the conversation can start with context instead of a full recap.",
   },
   {
     question: "What happens in a crisis?",
@@ -162,6 +128,10 @@ const footerLinks = [
   },
 ];
 
+const landingXPadding = "px-5 sm:px-8 lg:px-10";
+const landingSectionGap = "mt-16 sm:mt-20 lg:mt-24";
+const landingSectionShell = `relative z-10 mx-auto flex w-full max-w-6xl scroll-mt-16 flex-col ${landingXPadding}`;
+
 export default async function LandingPage() {
   const supabase = await createClient();
   const {
@@ -175,14 +145,15 @@ export default async function LandingPage() {
 
   return (
     <main className="landing-surface relative flex min-h-dvh flex-col overflow-hidden text-[#22352f]">
-      <header className="hero-animate-1 relative z-30 mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
-        <Link href="/" className="group flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-lg border border-[#d7e8e2] bg-[#d9eee8] text-sm font-bold text-[#24443d] shadow-[0_0_32px_rgba(112,168,157,0.18)] transition group-hover:border-[#9fc9bf]">
-            A
-          </span>
-          <span className="text-base font-semibold text-[#243a34]">
-            Alongly
-          </span>
+      <header
+        className={`hero-animate-1 relative z-30 mx-auto flex w-full max-w-7xl items-center justify-between py-5 ${landingXPadding}`}
+      >
+        <Link href="/" className="group flex items-center">
+          <BrandWordmark
+            className="h-10 w-auto transition group-hover:opacity-85"
+            priority
+            sizes="150px"
+          />
         </Link>
 
         <nav aria-label="Primary navigation" className="flex items-center gap-2 sm:gap-4">
@@ -196,7 +167,7 @@ export default async function LandingPage() {
             className="hidden rounded-md px-3 py-2 text-sm font-medium text-[#65766f] transition hover:bg-[#eef7f4] hover:text-[#233832] sm:inline-flex"
             href="#comparison"
           >
-            Compare
+            Why Alongly
           </Link>
           <Link
             className="rounded-md border border-[#d7e8e2] bg-white/80 px-4 py-2 text-sm font-semibold text-[#263a34] transition hover:border-[#9fc9bf] hover:bg-[#f0f8f5]"
@@ -207,23 +178,25 @@ export default async function LandingPage() {
         </nav>
       </header>
 
-      <section className="relative z-10 mx-auto flex w-full max-w-7xl flex-col px-5 pb-10 pt-10 sm:px-8 sm:pt-16 lg:min-h-[86svh] lg:px-10 lg:pt-20">
+      <section
+        className={`relative z-10 mx-auto flex w-full max-w-7xl flex-col pt-14 sm:pt-20 lg:pt-16 ${landingXPadding}`}
+      >
         <div className="hero-animate-2 relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center">
           <p className="inline-flex items-center gap-2 rounded-md border border-[#cfe7df] bg-[#eef8f5] px-3 py-1.5 text-xs font-semibold text-[#4e8b82]">
             <Sparkles aria-hidden="true" size={14} strokeWidth={2.2} />
             Human support for heavy days
           </p>
 
-          <h1 className="mt-7 max-w-5xl text-4xl font-bold tracking-tight text-[#213832] sm:text-5xl md:text-6xl lg:text-[4rem] lg:leading-[1.15]">
+          <h1 className="mt-9 max-w-5xl text-4xl font-bold tracking-tight text-[#213832] sm:text-5xl md:text-6xl lg:text-[4rem] lg:leading-[1.15]">
             You don&apos;t need advice. <br className="hidden md:block" />
             You need someone who&apos;s been there.
           </h1>
 
-          <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#64756f] sm:text-lg md:text-xl">
+          <p className="mt-7 max-w-2xl text-base leading-relaxed text-[#64756f] sm:text-lg md:text-xl">
             Alongly connects you with real people who&apos;ve lived through exactly what you&apos;re facing and came out the other side.
           </p>
 
-          <div className="mt-8 flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:justify-center">
+          <div className="mt-10 flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
               className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#78afa4] px-5 py-3 text-sm font-bold text-white shadow-[0_18px_60px_rgba(105,159,148,0.22)] transition hover:bg-[#659f94]"
               href="/signup?role=user"
@@ -245,7 +218,7 @@ export default async function LandingPage() {
             </Link>
           </div>
 
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[#7b8b84]">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[#7b8b84]">
             {trustPoints.map(({ Icon, text }) => (
               <span key={text} className="inline-flex items-center gap-2">
                 <Icon aria-hidden="true" size={14} strokeWidth={2} className="text-[#7aa99f]" />
@@ -254,10 +227,6 @@ export default async function LandingPage() {
             ))}
           </div>
         </div>
-
-        <div className="hero-animate-4 relative z-0 mx-auto mt-12 w-full max-w-6xl lg:mt-16">
-          <ProductPreview />
-        </div>
       </section>
 
 
@@ -265,146 +234,66 @@ export default async function LandingPage() {
       <section
         id="how-it-works"
         aria-labelledby="how-it-works-heading"
-        className="relative z-10 mx-auto flex w-full max-w-6xl scroll-mt-16 flex-col gap-12 px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
+        className={`${landingSectionShell} ${landingSectionGap} gap-12`}
       >
-        <RevealOnScroll className="max-w-2xl">
-          <p className="mb-3 text-sm font-semibold text-[#5d9b91]">
+        <RevealOnScroll className="mx-auto max-w-2xl text-center">
+          <p className="mb-3 inline-flex items-center gap-2 rounded-md border border-[#cfe7df] bg-[#eef8f5] px-3 py-1.5 text-sm font-semibold text-[#5d9b91]">
+            <Zap aria-hidden="true" size={15} strokeWidth={2.3} />
             How it works
           </p>
           <h2
             id="how-it-works-heading"
             className="text-3xl font-semibold leading-tight text-[#243a34] sm:text-4xl"
           >
-            Two sides. One conversation.
+            Three steps to someone who gets it.
           </h2>
           <p className="mt-4 max-w-xl text-base leading-7 text-[#65766f]">
-            Alongly works for both people who need support and people who want to
-            offer it. Here&apos;s exactly what happens on each side — step by
-            step.
+            A simple path from a hard moment to a real conversation.
           </p>
         </RevealOnScroll>
 
-        {/* Two-column flow grid */}
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch">
-          {/* USER FLOW */}
-          <RevealOnScroll className="h-full">
-            <div className="flex h-full flex-col gap-6 rounded-2xl border border-[#dce8e2] bg-white p-6 shadow-sm sm:p-8">
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#eef8f4] text-[#5d9b91]">
-                  <UserCircle2 aria-hidden="true" size={20} strokeWidth={2} />
-                </span>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-[#5d9b91]">
-                    For you — the person seeking support
-                  </p>
-                  <h3 className="text-xl font-semibold text-[#243a34]">
-                    User flow
-                  </h3>
-                </div>
-              </div>
-
-              <ol className="grid flex-1 gap-0 content-start">
-                {userSteps.map(({ step, title, body, Icon }) => (
-                  <li key={step} className="group relative flex gap-4 border-t border-[#edf3f0] py-5 first:border-0">
-                    <div className="flex flex-col items-center">
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f0f8f5] text-sm font-bold text-[#5d9b91] ring-1 ring-[#cbe6df]">
-                        {step}
-                      </span>
-                      {step < userSteps.length && (
-                        <span className="mt-1 flex-1 w-px bg-[#dce8e2]" />
-                      )}
-                    </div>
-                    <div className="pb-2">
-                      <div className="flex items-center gap-2">
-                        <Icon aria-hidden="true" size={15} strokeWidth={2.1} className="text-[#78afa4]" />
-                        <h4 className="text-base font-semibold text-[#243a34]">
-                          {title}
-                        </h4>
-                      </div>
-                      <p className="mt-1.5 text-sm leading-6 text-[#65766f]">
-                        {body}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-
-              <Link
-                href="/signup?role=user"
-                className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#78afa4] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#659f94]"
-              >
-                Find a companion
-                <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />
-              </Link>
-            </div>
-          </RevealOnScroll>
-
-          {/* COMPANION FLOW */}
-          <RevealOnScroll className="h-full">
-            <div className="flex h-full flex-col gap-6 rounded-2xl border border-[#dce8e2] bg-white p-6 shadow-sm sm:p-8">
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#f4f0fb] text-[#8b6fb5]">
-                  <HandHeart aria-hidden="true" size={20} strokeWidth={2} />
-                </span>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-[#8b6fb5]">
-                    For you — the human volunteer
-                  </p>
-                  <h3 className="text-xl font-semibold text-[#243a34]">
-                    Companion flow
-                  </h3>
-                </div>
-              </div>
-
-              <ol className="grid flex-1 gap-0 content-start">
-                {companionSteps.map(({ step, title, body, Icon }) => (
-                  <li key={step} className="group relative flex gap-4 border-t border-[#edf3f0] py-5 first:border-0">
-                    <div className="flex flex-col items-center">
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f5f0fb] text-sm font-bold text-[#8b6fb5] ring-1 ring-[#d9cef0]">
-                        {step}
-                      </span>
-                      {step < companionSteps.length && (
-                        <span className="mt-1 flex-1 w-px bg-[#dce8e2]" />
-                      )}
-                    </div>
-                    <div className="pb-2">
-                      <div className="flex items-center gap-2">
-                        <Icon aria-hidden="true" size={15} strokeWidth={2.1} className="text-[#8b6fb5]" />
-                        <h4 className="text-base font-semibold text-[#243a34]">
-                          {title}
-                        </h4>
-                      </div>
-                      <p className="mt-1.5 text-sm leading-6 text-[#65766f]">
-                        {body}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-
-              <Link
-                href="/signup?role=companion"
-                className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#d9cef0] bg-[#f5f0fb] px-5 py-2.5 text-sm font-bold text-[#6b4fa8] transition hover:bg-[#ede6f8]"
-              >
-                Become a companion
-                <HandHeart aria-hidden="true" size={16} strokeWidth={2.2} />
-              </Link>
-            </div>
-          </RevealOnScroll>
-        </div>
-
-        {/* Where both flows meet */}
         <RevealOnScroll>
-          <div className="rounded-2xl border border-[#dce8e2] bg-[#f8fbf9] px-6 py-6 sm:px-8 sm:py-7">
-            <p className="mb-2 text-sm font-semibold text-[#5d9b91]">Where the two flows meet</p>
-            <p className="max-w-3xl text-sm leading-7 text-[#65766f]">
-              Once the AI briefing is ready, both sides enter the same private chat room.
-              The user lands in a conversation where someone already understands the weight of what&apos;s
-              going on. The companion lands prepared — not guessing. When either of you wants
-              to move from text to voice, the room opens a private Jitsi meeting — the user and
-              the companion both need to be signed in to Jitsi for the call to connect.
-              That&apos;s the whole product: a quieter, smoother path to a real human moment.
+          <ol className="grid gap-5 md:grid-cols-3">
+            {howItWorksSteps.map(({ Icon, step, detail, title, body }) => (
+              <li
+                className="group relative flex h-full min-h-[15rem] flex-col overflow-hidden rounded-lg border border-[#dce8e2] bg-white p-6 shadow-[0_18px_55px_rgba(80,116,107,0.08)] transition hover:-translate-y-1 hover:border-[#a9d0c6] hover:shadow-[0_26px_70px_rgba(80,116,107,0.14)]"
+                key={step}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <span className="grid h-12 w-12 place-items-center rounded-lg bg-[#eef8f5] text-[#5d9b91] ring-1 ring-[#cbe6df] transition group-hover:bg-[#5d9b91] group-hover:text-white">
+                    <Icon aria-hidden="true" size={21} strokeWidth={2.3} />
+                  </span>
+                  <span className="rounded-md border border-[#f1d5c6] bg-[#fff6f1] px-3 py-1.5 text-xs font-bold text-[#b36c52]">
+                    {detail}
+                  </span>
+                </div>
+
+                <p className="mt-8 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b9a94]">
+                  Step {step}
+                </p>
+                <h3 className="mt-2 text-xl font-semibold leading-7 text-[#243a34]">
+                  {title}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-[#65766f]">
+                  {body}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </RevealOnScroll>
+
+        <RevealOnScroll>
+          <div className="flex flex-col items-center justify-center gap-4 text-center sm:flex-row">
+            <p className="text-sm font-medium text-[#65766f]">
+              Talk to someone who gets it.
             </p>
+            <Link
+              href="/signup?role=user"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#78afa4] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#659f94]"
+            >
+              Find a companion
+              <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />
+            </Link>
           </div>
         </RevealOnScroll>
       </section>
@@ -412,84 +301,58 @@ export default async function LandingPage() {
       <section
         id="comparison"
         aria-labelledby="comparison-heading"
-        className="relative z-10 mx-auto flex w-full max-w-6xl scroll-mt-16 flex-col gap-9 px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
+        className={`relative z-10 scroll-mt-16 border-y border-[#dbe9e3] bg-[#eef7f3] ${landingSectionGap}`}
       >
-        <RevealOnScroll className="flex max-w-3xl flex-col gap-4">
-          <p className="text-sm font-semibold text-[#5d9b91]">
-            Why Alongly
-          </p>
-          <h2
-            id="comparison-heading"
-            className="text-3xl font-semibold leading-tight text-[#243a34] sm:text-4xl"
-          >
-            Different care for different moments.
-          </h2>
-          <p className="max-w-2xl text-base leading-7 text-[#65766f]">
-            Alongly is not trying to be therapy, meditation, or self-help
-            exercises. It is a quieter bridge to a real person.
-          </p>
-        </RevealOnScroll>
-
-        <RevealOnScroll className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              title: "Real human conversation",
-              description: "Not an AI bot or a scripted flow. You connect with a real person who can actually understand.",
-              icon: MessageCircleHeart,
-            },
-            {
-              title: "Matched lived experience",
-              description: "You are paired with someone who has been close to the shape of your situation, not just an anonymous listener.",
-              icon: HandHeart,
-            },
-            {
-              title: "Context before the chat",
-              description: "Your companion gets a brief so you don't have to restart from zero and exhaust yourself explaining it all again.",
-              icon: NotebookText,
-            },
-            {
-              title: "Low-friction support",
-              description: "Built for heavy days. No lengthy clinical intake or waiting weeks for formal care.",
-              icon: Zap,
-            },
-            {
-              title: "No clinical diagnosis",
-              description: "A space for human connection, not therapy, medication, or medical advice.",
-              icon: Shield,
-            },
-            {
-              title: "The right fit for the moment",
-              description: "When you just need a real person who gets it, rather than guided meditation or self-help exercises.",
-              icon: Heart,
-            },
-          ].map((diff) => (
-            <article
-              key={diff.title}
-              className="group relative flex flex-col rounded-2xl border border-[#dce8e2] bg-white p-6 shadow-sm transition-all hover:border-[#9fc9bf] hover:shadow-md hover:shadow-[#70a89d]/10"
+        <div
+          className={`mx-auto flex w-full max-w-6xl flex-col gap-10 py-16 sm:py-20 lg:py-24 ${landingXPadding}`}
+        >
+          <RevealOnScroll className="mx-auto max-w-3xl text-center">
+            <p className="inline-flex items-center gap-2 rounded-md border border-[#cfe7df] bg-white/70 px-3 py-1.5 text-sm font-semibold text-[#5d9b91]">
+              <Shield aria-hidden="true" size={15} strokeWidth={2.3} />
+              Why Alongly
+            </p>
+            <h2
+              id="comparison-heading"
+              className="mx-auto mt-4 max-w-3xl text-3xl font-semibold leading-tight text-[#243a34] sm:text-4xl"
             >
-              <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#f0f8f5] text-[#5d9b91] transition-colors group-hover:bg-[#e4f2ee] group-hover:text-[#4e8b82]">
-                <diff.icon size={24} strokeWidth={2} />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-[#243a34]">
-                {diff.title}
-              </h3>
-              <p className="text-sm leading-relaxed text-[#65766f]">
-                {diff.description}
-              </p>
-            </article>
-          ))}
-        </RevealOnScroll>
+              Different care for different moments.
+            </h2>
+          </RevealOnScroll>
 
-        <p className="max-w-2xl text-sm leading-6 text-[#7b8b84]">
-          Alongly is peer support, not a replacement for licensed therapy,
-          diagnosis, medication, or emergency care.
-        </p>
+          <RevealOnScroll>
+            <div className="grid gap-4 md:grid-cols-3">
+              {whyAlonglyCards.map(({ Icon, title, body }) => (
+                <article
+                  key={title}
+                  className="flex h-full flex-col rounded-lg border border-[#d5e6df] bg-white/85 p-6 shadow-[0_18px_55px_rgba(80,116,107,0.08)]"
+                >
+                  <span className="grid h-10 w-10 place-items-center rounded-lg border border-[#c7e0d7] bg-[#f5fbf8] text-[#639d92]">
+                    <Icon aria-hidden="true" size={19} strokeWidth={2.2} />
+                  </span>
+                  <h3 className="mt-6 text-xl font-semibold leading-7 text-[#243a34]">
+                    {title}
+                  </h3>
+                  <p className="mt-3 text-base leading-7 text-[#5f716a]">
+                    {body}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </RevealOnScroll>
+
+          <RevealOnScroll className="mx-auto max-w-2xl text-center">
+            <p className="text-sm leading-6 text-[#6f827a]">
+              Alongly is peer support, not a replacement for licensed therapy,
+              diagnosis, medication, or emergency care.
+            </p>
+          </RevealOnScroll>
+        </div>
       </section>
 
       <section
         id="faq"
         aria-labelledby="faq-heading"
-        className="relative z-10 mx-auto flex w-full max-w-6xl scroll-mt-16 flex-col gap-9 px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
+        className={`${landingSectionShell} ${landingSectionGap} gap-9`}
       >
         <RevealOnScroll className="max-w-2xl">
           <p className="mb-3 text-sm font-semibold text-[#5d9b91]">FAQ</p>
@@ -506,7 +369,9 @@ export default async function LandingPage() {
         </RevealOnScroll>
       </section>
 
-      <RevealOnScroll className="relative z-10 mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+      <RevealOnScroll
+        className={`relative z-10 mx-auto w-full max-w-6xl ${landingSectionGap} ${landingXPadding}`}
+      >
         <section className="landing-band rounded-lg border border-[#dce8e2] px-6 py-10 text-center sm:px-10 sm:py-14">
           <div className="mx-auto flex max-w-2xl flex-col items-center">
             <h2 className="text-3xl font-semibold leading-tight text-[#243a34] sm:text-4xl">
@@ -534,16 +399,13 @@ export default async function LandingPage() {
         </section>
       </RevealOnScroll>
 
-      <footer className="relative z-10 mx-auto mt-8 w-full max-w-6xl border-t border-[#dce8e2] px-5 py-12 sm:px-8 sm:py-14 lg:px-10">
+      <footer
+        className={`relative z-10 mx-auto w-full max-w-6xl border-t border-[#dce8e2] py-12 sm:py-14 ${landingSectionGap} ${landingXPadding}`}
+      >
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr]">
           <div className="flex flex-col gap-4">
-            <Link className="flex w-fit items-center gap-3" href="/">
-              <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#d9eee8] text-sm font-bold text-[#24443d]">
-                A
-              </span>
-              <span className="text-lg font-semibold text-[#243a34]">
-                Alongly
-              </span>
+            <Link className="flex w-fit items-center" href="/">
+              <BrandWordmark className="h-9 w-auto" sizes="140px" />
             </Link>
             <p className="max-w-md text-sm leading-7 text-[#65766f]">
               A softer way to be heard. Private by default, gentle in tone, and
@@ -606,131 +468,3 @@ export default async function LandingPage() {
     </main>
   );
 }
-
-function ProductPreview() {
-  return (
-    <div className="hero-product relative overflow-hidden rounded-lg border border-[#dce8e2] bg-white shadow-[0_28px_80px_rgba(81,114,105,0.16)]">
-      <div className="flex items-center justify-between border-b border-[#e2ece7] bg-[#f8fbf9] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#d9947d]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#78afa4]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#b8c8c2]" />
-        </div>
-        <p className="hidden text-xs text-[#7b8b84] sm:block">
-          Briefing prepared 2 minutes ago
-        </p>
-      </div>
-
-      <div className="grid min-h-[28rem] md:grid-cols-[14rem_1fr] lg:grid-cols-[15rem_1fr_17rem]">
-        <aside className="hidden border-r border-[#e2ece7] bg-[#f4f8f5] p-4 md:block">
-          <p className="mb-4 text-sm font-semibold text-[#243a34]">Alongly</p>
-          <div className="grid gap-2">
-            {["Today", "Briefings", "Matches", "Sessions"].map((item, index) => (
-              <div
-                className={`rounded-md px-3 py-2 text-sm ${
-                  index === 0
-                    ? "bg-[#e5f2ee] text-[#4f8f84]"
-                    : "text-[#6e7e78]"
-                }`}
-                key={item}
-              >
-                {item}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 rounded-lg border border-[#dce8e2] bg-white p-3">
-            <p className="text-xs text-[#7b8b84]">Companion match</p>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#e5f2ee] text-sm font-semibold text-[#4f8f84]">
-                M
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-[#243a34]">Mara</p>
-                <p className="text-xs text-[#6e7e78]">Available now</p>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <section className="flex min-h-0 flex-col p-4 sm:p-5">
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold text-[#5d9b91]">Live room</p>
-              <h2 className="mt-1 text-2xl font-semibold text-[#243a34]">
-                Start where the day actually is.
-              </h2>
-            </div>
-            <span className="w-fit rounded-md border border-[#c6ddd5] bg-[#eef8f4] px-3 py-1.5 text-xs font-semibold text-[#4f8f84]">
-              Matched
-            </span>
-          </div>
-
-          <div className="grid gap-3">
-            <div className="rounded-lg border border-[#dce8e2] bg-[#fbfdfc] p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-[#374b44]">
-                  Companion briefing
-                </p>
-                <span className="text-xs text-[#7b8b84]">3 notes</span>
-              </div>
-              <div className="grid gap-2 text-sm leading-6 text-[#65766f]">
-                <p>Feels exhausted after carrying a family conflict alone.</p>
-                <p>Needs steadiness first, advice later.</p>
-                <p>Prefers direct language and room to pause.</p>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-[1fr_0.82fr]">
-              <div className="rounded-lg border border-[#c6ddd5] bg-[#eef8f4] p-4">
-                <p className="text-xs font-semibold text-[#4f8f84]">You</p>
-                <p className="mt-2 text-sm leading-6 text-[#374b44]">
-                  I do not need a solution yet. I just need someone who will not
-                  make me explain why this feels big.
-                </p>
-              </div>
-              <div className="rounded-lg border border-[#dce8e2] bg-white p-4">
-                <p className="text-xs font-semibold text-[#6f8fbd]">Mara</p>
-                <p className="mt-2 text-sm leading-6 text-[#374b44]">
-                  That makes sense. We can stay with the weight of it before we
-                  try to name what comes next.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <aside className="hidden border-l border-[#e2ece7] bg-[#f4f8f5] p-4 lg:block">
-          <div className="rounded-lg border border-[#dce8e2] bg-white p-4">
-            <p className="text-xs text-[#7b8b84]">Match signal</p>
-            <p className="mt-2 text-4xl font-semibold text-[#243a34]">92%</p>
-            <p className="mt-2 text-sm leading-6 text-[#65766f]">
-              Shared context, support style, and current availability.
-            </p>
-          </div>
-
-          <div className="mt-3 grid gap-2">
-            {["Lived experience", "Gentle directness", "Can hold pauses"].map(
-              (item) => (
-                <div
-                  className="flex items-center gap-2 rounded-md border border-[#dce8e2] bg-white px-3 py-2 text-sm text-[#374b44]"
-                  key={item}
-                >
-                  <Check
-                    aria-hidden="true"
-                    size={14}
-                    strokeWidth={2.6}
-                    className="text-[#5d9b91]"
-                  />
-                  {item}
-                </div>
-              ),
-            )}
-          </div>
-        </aside>
-      </div>
-    </div>
-  );
-}
-
-

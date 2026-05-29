@@ -46,8 +46,8 @@ export function BreatheClient() {
   const done = seconds === 0;
 
   return (
-    <main className="min-h-dvh bg-stone-200 text-stone-950 sm:grid sm:place-items-center sm:px-4 sm:py-5">
-      <section className="relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 text-white shadow-2xl shadow-stone-950/10 sm:rounded-[26px] sm:border sm:border-white/10">
+    <main className="min-h-dvh bg-stone-950 text-stone-950">
+      <section className="relative mx-auto flex h-dvh w-full flex-col overflow-hidden bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 text-white">
         <div className="safe-top flex items-center justify-between px-5 py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
             Breathe

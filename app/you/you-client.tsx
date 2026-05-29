@@ -90,9 +90,6 @@ export function YouClient() {
             Sign out
           </button>
         </form>
-        <p className="text-center text-xs text-stone-400">
-          You don&apos;t have to be okay to be here.
-        </p>
       </div>
     </section>
   );

@@ -1,3 +1,4 @@
+import { BrandWordmark } from "@/app/components/brand-logo";
 import { LoginForm } from "./login-form";
 
 type LoginPageProps = {
@@ -15,7 +16,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,_#fdf6ec_0%,_#fbf7f1_55%,_#f3faf9_100%)] px-5 py-12">
       <section className="w-full max-w-md rounded-[28px] border border-white/80 bg-white/85 p-8 shadow-xl shadow-stone-300/20 backdrop-blur">
-        <div className="mb-8 text-center">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <BrandWordmark className="mb-5 h-12 w-auto" priority sizes="180px" />
           <h1 className="text-[1.7rem] font-bold tracking-tight text-stone-950">
             Welcome back
           </h1>

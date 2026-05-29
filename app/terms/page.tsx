@@ -2,6 +2,8 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 import type { Metadata } from "next";
 
+import { BrandWordmark } from "@/app/components/brand-logo";
+
 export const metadata: Metadata = {
   title: "Terms of Use · Alongly",
   description:
@@ -123,11 +125,12 @@ export default function TermsPage() {
     <main className="landing-surface relative min-h-dvh text-[#22352f]">
       {/* Header */}
       <header className="relative z-30 mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
-        <Link href="/" className="group flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-lg border border-[#d7e8e2] bg-[#d9eee8] text-sm font-bold text-[#24443d] shadow-[0_0_32px_rgba(112,168,157,0.18)] transition group-hover:border-[#9fc9bf]">
-            A
-          </span>
-          <span className="text-base font-semibold text-[#243a34]">Alongly</span>
+        <Link href="/" className="group flex items-center">
+          <BrandWordmark
+            className="h-10 w-auto transition group-hover:opacity-85"
+            priority
+            sizes="150px"
+          />
         </Link>
 
         <nav aria-label="Primary navigation" className="flex items-center gap-2 sm:gap-4">
@@ -258,11 +261,8 @@ export default function TermsPage() {
       {/* Footer */}
       <footer className="relative z-10 mx-auto w-full max-w-6xl border-t border-[#dce8e2] px-5 py-10 sm:px-8 lg:px-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Link className="flex w-fit items-center gap-3" href="/">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#d9eee8] text-sm font-bold text-[#24443d]">
-              A
-            </span>
-            <span className="text-base font-semibold text-[#243a34]">Alongly</span>
+          <Link className="flex w-fit items-center" href="/">
+            <BrandWordmark className="h-9 w-auto" sizes="140px" />
           </Link>
 
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#7b8b84]">
