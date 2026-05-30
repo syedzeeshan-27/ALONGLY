@@ -6,11 +6,12 @@ import { SignupForm } from "./signup-form";
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string | string[] }>;
+  searchParams: Promise<{ role?: string | string[]; next?: string | string[] }>;
 }) {
-  const { role: roleParam } = await searchParams;
+  const { role: roleParam, next: nextParam } = await searchParams;
   const candidate = Array.isArray(roleParam) ? roleParam[0] : roleParam;
   const initialRole: ProfileRole = isProfileRole(candidate) ? candidate : "user";
+  const nextPath = Array.isArray(nextParam) ? nextParam[0] : nextParam;
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,_#fdf6ec_0%,_#fbf7f1_55%,_#f3faf9_100%)] px-5 py-12">
@@ -22,7 +23,7 @@ export default async function SignupPage({
           </h1>
         </div>
 
-        <SignupForm initialRole={initialRole} />
+        <SignupForm initialRole={initialRole} nextPath={nextPath} />
       </section>
     </main>
   );

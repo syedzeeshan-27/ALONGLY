@@ -73,7 +73,7 @@ function CompanionCard({
 
           <Link
             className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-[#edf7f4] px-4 py-2.5 text-sm font-semibold text-[#2f5b51] transition hover:bg-[#deefe9]"
-            href="/signup?role=user"
+            href={`/talk?style=${encodeURIComponent(profile.name)}`}
           >
             Talk to this style
           </Link>

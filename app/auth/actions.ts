@@ -46,6 +46,7 @@ export async function signup(
   const email = fieldValue(formData, "email");
   const password = fieldValue(formData, "password");
   const roleValue = fieldValue(formData, "role");
+  const nextPath = fieldValue(formData, "next");
   const credentialError = validateCredentials(email, password);
 
   if (credentialError) {
@@ -96,7 +97,7 @@ export async function signup(
     };
   }
 
-  redirect(redirectPath);
+  redirect(postAuthRedirectPath(nextPath, roleValue));
 }
 
 export async function login(

@@ -8,8 +8,10 @@ import type { ProfileRole } from "@/lib/supabase/types";
 
 export function SignupForm({
   initialRole = "user",
+  nextPath,
 }: {
   initialRole?: ProfileRole;
+  nextPath?: string;
 }) {
   const [state, formAction, pending] = useActionState<
     AuthFormState | undefined,
@@ -22,6 +24,8 @@ export function SignupForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
+      <input name="next" type="hidden" value={nextPath ?? ""} />
+
       <div className="flex flex-col gap-2">
         <label className="text-sm font-semibold text-stone-700" htmlFor="email">
           Email
