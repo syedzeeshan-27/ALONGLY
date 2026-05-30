@@ -59,6 +59,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
       variant={isCompanion ? "companion" : "user"}
     >
       <RoomClient
+        completedRedirectPath={isCompanion ? "/companion-sessions" : "/sessions"}
         currentUserId={user.id}
         initialMessagesError={messagesError?.message ?? null}
         initialMessages={messages ?? []}

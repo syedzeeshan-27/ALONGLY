@@ -48,6 +48,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string | null;
+          user_email: string | null;
           companion_id: string | null;
           experience_tag: string | null;
           intensity_tag: string | null;
@@ -55,11 +56,13 @@ export type Database = {
           status: string | null;
           voice_room_url: string | null;
           companion_briefing: string | null;
+          user_context_card: string | null;
           created_at: string | null;
         };
         Insert: {
           id?: string;
           user_id?: string | null;
+          user_email?: string | null;
           companion_id?: string | null;
           experience_tag?: string | null;
           intensity_tag?: string | null;
@@ -67,10 +70,12 @@ export type Database = {
           status?: string | null;
           voice_room_url?: string | null;
           companion_briefing?: string | null;
+          user_context_card?: string | null;
           created_at?: string | null;
         };
         Update: {
           user_id?: string | null;
+          user_email?: string | null;
           companion_id?: string | null;
           experience_tag?: string | null;
           intensity_tag?: string | null;
@@ -78,6 +83,7 @@ export type Database = {
           status?: string | null;
           voice_room_url?: string | null;
           companion_briefing?: string | null;
+          user_context_card?: string | null;
         };
         Relationships: [];
       };

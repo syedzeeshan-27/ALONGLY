@@ -18,6 +18,7 @@ type MessageRow = Database["public"]["Tables"]["messages"]["Row"];
 type MatchRequestRow = Database["public"]["Tables"]["match_requests"]["Row"];
 
 type RoomClientProps = {
+  completedRedirectPath: string;
   roomId: string;
   currentUserId: string;
   initialMessages: MessageRow[];
@@ -48,6 +49,7 @@ function removeMessage(current: MessageRow[], messageId: string) {
 }
 
 export function RoomClient({
+  completedRedirectPath,
   roomId,
   currentUserId,
   initialMessages,
@@ -129,7 +131,7 @@ export function RoomClient({
           const updatedRequest = payload.new as Partial<MatchRequestRow>;
 
           if (updatedRequest.status === "completed") {
-            router.push("/");
+            router.push(completedRedirectPath);
           }
 
           if (typeof updatedRequest.voice_room_url !== "undefined") {
@@ -151,7 +153,7 @@ export function RoomClient({
       window.clearInterval(pollId);
       void supabase.removeChannel(channel);
     };
-  }, [refreshMessages, roomId, router, supabase]);
+  }, [completedRedirectPath, refreshMessages, roomId, router, supabase]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -272,7 +274,7 @@ export function RoomClient({
       return;
     }
 
-    router.push("/");
+    router.push(completedRedirectPath);
   }
 
   return (

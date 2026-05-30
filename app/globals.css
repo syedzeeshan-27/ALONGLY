@@ -245,6 +245,111 @@ button, textarea, input, select { font: inherit; }
   transform: translateY(0);
 }
 
+.why-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  opacity: 1;
+  border-color: rgba(197, 224, 214, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 18px 55px rgba(80, 116, 107, 0.08);
+  transition:
+    border-color 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.why-card::before {
+  content: "";
+  position: absolute;
+  inset: -20% auto -30% -35%;
+  width: 65%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0),
+    rgba(194, 231, 222, 0.18),
+    rgba(255, 255, 255, 0)
+  );
+  transform: rotate(14deg) translate3d(-120%, 0, 0);
+  animation: why-card-wash 11s ease-in-out infinite;
+  animation-delay: calc(var(--card-index, 0) * 180ms);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.why-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Why Alongly marquee ── */
+.why-marquee {
+  position: relative;
+  overflow: hidden;
+  /* Soft fade so cards appear to enter and leave at the edges. */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 7%,
+    #000 93%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 7%,
+    #000 93%,
+    transparent 100%
+  );
+}
+
+.why-marquee-track {
+  display: flex;
+  /* Stretch every card to the tallest one so heights stay uniform. */
+  align-items: stretch;
+  width: max-content;
+  /* One continuous track; the whole row slides as one piece. */
+  animation: why-marquee-scroll 30s linear infinite;
+  will-change: transform;
+}
+
+/* Pause the row while the visitor is reading / hovering. */
+.why-marquee:hover .why-marquee-track {
+  animation-play-state: paused;
+}
+
+.why-marquee-card {
+  flex: 0 0 320px;
+  width: 320px;
+  max-width: 82vw;
+  /* Per-card right margin (not flex gap) keeps the -50% loop seamless. */
+  margin-right: 1rem;
+}
+
+.why-card:hover {
+  border-color: rgba(122, 175, 164, 0.52);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 28px 75px rgba(80, 116, 107, 0.13);
+}
+
+.why-card-icon {
+  transition:
+    transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.why-card:hover .why-card-icon {
+  transform: translateY(-2px) rotate(-4deg) scale(1.06);
+  background: rgba(233, 247, 242, 0.98);
+  border-color: rgba(122, 175, 164, 0.38);
+  color: #4e8b82;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .process-step::before,
   .process-icon,
@@ -255,8 +360,16 @@ button, textarea, input, select { font: inherit; }
   .faq-question-mark,
   .faq-question-mark span,
   .faq-answer-shell,
-  .faq-answer-inner {
+  .faq-answer-inner,
+  .why-card,
+  .why-card::before,
+  .why-card-icon {
     transition-duration: 1ms;
+    animation-duration: 1ms;
+  }
+
+  .why-marquee-track {
+    animation-play-state: paused;
   }
 }
 
@@ -350,6 +463,35 @@ button, textarea, input, select { font: inherit; }
 @keyframes nav-drop {
   from { opacity: 0; transform: translateY(-16px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+.companion-swipe-hint {
+  animation: companion-swipe-hint 2.4s ease-in-out infinite;
+}
+
+@keyframes companion-swipe-hint {
+  0%, 100% { transform: translateY(2px); opacity: 0.6; }
+  50% { transform: translateY(-3px); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .companion-swipe-hint {
+    animation: none;
+  }
+}
+
+@keyframes why-marquee-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  /* Track holds two copies of the cards, so -50% advances exactly one
+     full copy — the duplicate lands where the original began. */
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes why-card-wash {
+  0%, 18% { transform: rotate(14deg) translate3d(-120%, 0, 0); opacity: 0; }
+  32% { opacity: 1; }
+  58% { transform: rotate(14deg) translate3d(160%, 0, 0); opacity: 0.85; }
+  100% { transform: rotate(14deg) translate3d(160%, 0, 0); opacity: 0; }
 }
 
 /* ══════════════════════════════════

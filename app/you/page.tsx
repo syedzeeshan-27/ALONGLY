@@ -21,9 +21,15 @@ export default async function YouPage() {
     redirect(roleRedirectPath(role));
   }
 
+  const { count: sessionCount } = await supabase
+    .from("match_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("status", "completed");
+
   return (
     <MobileAppShell activeTab="you" subtitle="Your quiet corner">
-      <YouClient />
+      <YouClient sessionCount={sessionCount ?? 0} />
     </MobileAppShell>
   );
 }

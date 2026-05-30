@@ -6,20 +6,22 @@ import {
   HandHeart,
   Heart,
   MessageCircleHeart,
-  NotebookText,
   Shield,
   Sparkles,
   Users,
   Zap,
 } from "lucide-react";
 
-import { getProfileRole, roleRedirectPath } from "@/lib/auth";
 import { FaqAccordion } from "@/app/components/faq-accordion";
-import { createClient } from "@/lib/supabase/server";
-import {
-  RevealOnScroll,
-} from "@/app/components/landing-animations";
 import { BrandWordmark } from "@/app/components/brand-logo";
+import { RevealOnScroll } from "@/app/components/landing-animations";
+import { CompanionShowcase } from "@/app/components/companion-showcase";
+import { WhyAlonglyMarquee } from "@/app/components/why-alongly-marquee";
+import { getProfileRole, roleRedirectPath } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+
+const companionWaitlistHref =
+  "mailto:alongly26@gmail.com?subject=Companion%20pilot%20interest";
 
 const howItWorksSteps = [
   {
@@ -32,9 +34,9 @@ const howItWorksSteps = [
   {
     Icon: Sparkles,
     step: "02",
-    detail: "~3 min",
-    title: "Get matched in ~3 min",
-    body: "Alongly turns your answers into context and finds a real companion.",
+    detail: "Pilot live",
+    title: "Route into a live queue",
+    body: "Alongly turns your answers into context and routes you into a live companion pilot.",
   },
   {
     Icon: HandHeart,
@@ -48,29 +50,36 @@ const howItWorksSteps = [
 const trustPoints = [
   { Icon: Shield, text: "Private by default" },
   { Icon: Users, text: "Real companions" },
-  { Icon: Clock, text: "No waitlists" },
+  { Icon: Clock, text: "Pilot availability" },
   { Icon: Zap, text: "Free to start" },
 ];
 
-const whyAlonglyCards = [
+const pilotCompanionProfiles = [
   {
-    Icon: MessageCircleHeart,
-    title: "Real experience, not training.",
-    body: "Your companion isn't certified. They've just been there.",
+    name: "Asha",
+    initials: "AS",
+    vibe: "Soft landing",
+    focus: "Best for days that feel emotionally loud and hard to name.",
+    style: "Gentle, patient, and slow to interrupt.",
+    accent: "from-[#f7d8c8] to-[#fff4ed]",
   },
   {
-    Icon: NotebookText,
-    title: "No pressure to perform your pain.",
-    body: "You don't have to explain why it feels big. It just does.",
+    name: "Noor",
+    initials: "NO",
+    vibe: "Grounded calm",
+    focus: "Best for spiraling thoughts, overthinking, or shutdown moments.",
+    style: "Steady, clear, and good at helping you breathe first.",
+    accent: "from-[#cfe8e1] to-[#f2fbf8]",
   },
   {
-    Icon: HandHeart,
-    title: "A bridge, not a destination.",
-    body: "Not therapy, not a hotline. Just a real person for the moment you're in.",
+    name: "Rey",
+    initials: "RY",
+    vibe: "Straight but kind",
+    focus: "Best for when you want honesty, warmth, and less small talk.",
+    style: "Direct, reassuring, and still deeply human.",
+    accent: "from-[#f5e2be] to-[#fff9eb]",
   },
-];
-
-
+] as const;
 
 const faqs = [
   {
@@ -81,7 +90,7 @@ const faqs = [
   {
     question: "Do I need to log in to Jitsi for the voice call?",
     answer:
-      "Yes. Alongly's voice calls run through a private Jitsi meeting room, and both the user and the companion need to be signed in to Jitsi before the call will connect. Text chat works without it — Jitsi sign-in only matters when one of you wants to switch to voice. If a call won't start, the most common reason is that one side hasn't completed the Jitsi login yet.",
+      "Yes. Alongly's voice calls run through a private Jitsi meeting room, and both the user and the companion need to be signed in to Jitsi before the call will connect. Text chat works without it - Jitsi sign-in only matters when one of you wants to switch to voice. If a call won't start, the most common reason is that one side hasn't completed the Jitsi login yet.",
   },
   {
     question: "How long does a typical conversation last?",
@@ -123,7 +132,11 @@ const footerLinks = [
     title: "Resources",
     links: [
       { label: "988 Lifeline", href: "https://988lifeline.org/", external: true },
-      { label: "Become a companion", href: "/signup?role=companion" },
+      {
+        label: "Companion waitlist",
+        href: companionWaitlistHref,
+        external: true,
+      },
     ],
   },
 ];
@@ -156,7 +169,10 @@ export default async function LandingPage() {
           />
         </Link>
 
-        <nav aria-label="Primary navigation" className="flex items-center gap-2 sm:gap-4">
+        <nav
+          aria-label="Primary navigation"
+          className="flex items-center gap-2 sm:gap-4"
+        >
           <Link
             className="hidden rounded-md px-3 py-2 text-sm font-medium text-[#65766f] transition hover:bg-[#eef7f4] hover:text-[#233832] sm:inline-flex"
             href="#how-it-works"
@@ -168,6 +184,12 @@ export default async function LandingPage() {
             href="#comparison"
           >
             Why Alongly
+          </Link>
+          <Link
+            className="hidden rounded-md px-3 py-2 text-sm font-medium text-[#65766f] transition hover:bg-[#eef7f4] hover:text-[#233832] sm:inline-flex"
+            href="/changelog"
+          >
+            Changelog
           </Link>
           <Link
             className="rounded-md border border-[#d7e8e2] bg-white/80 px-4 py-2 text-sm font-semibold text-[#263a34] transition hover:border-[#9fc9bf] hover:bg-[#f0f8f5]"
@@ -211,9 +233,9 @@ export default async function LandingPage() {
             </Link>
             <Link
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#cfded8] bg-white px-5 py-3 text-sm font-bold text-[#314941] transition hover:border-[#9fc9bf] hover:bg-[#f1f8f5]"
-              href="/signup?role=companion"
+              href={companionWaitlistHref}
             >
-              Become a companion
+              Join companion waitlist
               <HandHeart aria-hidden="true" size={17} strokeWidth={2.2} />
             </Link>
           </div>
@@ -221,7 +243,12 @@ export default async function LandingPage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[#7b8b84]">
             {trustPoints.map(({ Icon, text }) => (
               <span key={text} className="inline-flex items-center gap-2">
-                <Icon aria-hidden="true" size={14} strokeWidth={2} className="text-[#7aa99f]" />
+                <Icon
+                  aria-hidden="true"
+                  size={14}
+                  strokeWidth={2}
+                  className="text-[#7aa99f]"
+                />
                 {text}
               </span>
             ))}
@@ -229,7 +256,32 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      <section className={`${landingSectionShell} mt-12 gap-6`}>
+        <RevealOnScroll className="rounded-[2rem] border border-[#d7e8e2] bg-white/80 p-6 shadow-[0_24px_80px_rgba(80,116,107,0.1)] sm:p-8">
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="inline-flex items-center gap-2 rounded-full border border-[#cfe7df] bg-[#eef8f5] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#5d9b91]">
+                  <Users aria-hidden="true" size={14} strokeWidth={2.2} />
+                  Founding pilot
+                </p>
+                <h2 className="mt-4 text-3xl font-semibold leading-tight text-[#243a34] sm:text-[2.25rem]">
+                  Three companion styles, one live human pilot behind them.
+                </h2>
+                <p className="mt-4 max-w-xl text-base leading-7 text-[#65766f]">
+                  For the MVP, these profile cards show the kind of support Alongly is building toward. Every live request currently routes into the same real companion queue so the experience stays human while we validate demand.
+                </p>
+              </div>
 
+              <div className="rounded-2xl border border-[#f1d9cc] bg-[#fff7f2] px-4 py-3 text-sm font-medium text-[#9a654f]">
+                Pilot preview only. Not three separate live companions yet.
+              </div>
+            </div>
+
+            <CompanionShowcase profiles={pilotCompanionProfiles} />
+          </div>
+        </RevealOnScroll>
+      </section>
 
       <section
         id="how-it-works"
@@ -315,30 +367,11 @@ export default async function LandingPage() {
               id="comparison-heading"
               className="mx-auto mt-4 max-w-3xl text-3xl font-semibold leading-tight text-[#243a34] sm:text-4xl"
             >
-              Different care for different moments.
+              Every feature exists because someone wished it had existed for them.
             </h2>
           </RevealOnScroll>
 
-          <RevealOnScroll>
-            <div className="grid gap-4 md:grid-cols-3">
-              {whyAlonglyCards.map(({ Icon, title, body }) => (
-                <article
-                  key={title}
-                  className="flex h-full flex-col rounded-lg border border-[#d5e6df] bg-white/85 p-6 shadow-[0_18px_55px_rgba(80,116,107,0.08)]"
-                >
-                  <span className="grid h-10 w-10 place-items-center rounded-lg border border-[#c7e0d7] bg-[#f5fbf8] text-[#639d92]">
-                    <Icon aria-hidden="true" size={19} strokeWidth={2.2} />
-                  </span>
-                  <h3 className="mt-6 text-xl font-semibold leading-7 text-[#243a34]">
-                    {title}
-                  </h3>
-                  <p className="mt-3 text-base leading-7 text-[#5f716a]">
-                    {body}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </RevealOnScroll>
+          <WhyAlonglyMarquee />
 
           <RevealOnScroll className="mx-auto max-w-2xl text-center">
             <p className="text-sm leading-6 text-[#6f827a]">
@@ -390,9 +423,9 @@ export default async function LandingPage() {
               </Link>
               <Link
                 className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#cfded8] bg-white/70 px-5 py-3 text-sm font-bold text-[#314941] transition hover:bg-[#f1f8f5]"
-                href="/signup?role=companion"
+                href={companionWaitlistHref}
               >
-                Become a companion
+                Join companion waitlist
               </Link>
             </div>
           </div>

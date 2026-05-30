@@ -6,6 +6,10 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
+import {
+  parseStoredUserContextCard,
+  USER_CONTEXT_KEY,
+} from "@/lib/user-continuity";
 
 type ChatRole = "user" | "assistant";
 
@@ -25,6 +29,7 @@ type MatchRequestRow =
   Database["public"]["Tables"]["match_requests"]["Row"];
 
 type ChatClientProps = {
+  userEmail: string | null;
   userId: string;
 };
 
@@ -71,7 +76,7 @@ function parseTaggedResponse(content: string) {
   return { visibleContent, tags: null };
 }
 
-export function ChatClient({ userId }: ChatClientProps) {
+export function ChatClient({ userEmail, userId }: ChatClientProps) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -96,13 +101,20 @@ export function ChatClient({ userId }: ChatClientProps) {
     briefing: string | null,
   ) {
     const requestId = crypto.randomUUID();
+    const storedContextCard = parseStoredUserContextCard(
+      window.localStorage.getItem(USER_CONTEXT_KEY),
+    );
     const { error: insertError } = await supabase.from("match_requests").insert({
       id: requestId,
       user_id: userId,
+      user_email: userEmail,
       experience_tag: tags.experience_tag,
       intensity_tag: tags.intensity_tag,
       style_tag: tags.style_tag,
       companion_briefing: briefing,
+      user_context_card: storedContextCard
+        ? JSON.stringify(storedContextCard)
+        : null,
     });
 
     if (insertError) {

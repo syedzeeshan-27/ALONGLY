@@ -4,6 +4,7 @@ import { MessageCircle, NotebookText } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { CompanionHandoffCard } from "@/app/components/companion-handoff-card";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 
@@ -12,10 +13,12 @@ type MatchRequestRow =
 
 type BriefingCard = {
   id: string;
+  user_email: string | null;
   experience_tag: string;
   intensity_tag: string;
   style_tag: string;
   companion_briefing: string | null;
+  user_context_card: string | null;
 };
 
 type BriefingsClientProps = {
@@ -41,10 +44,12 @@ function toBriefingCard(
 
   return {
     id: row.id,
+    user_email: row.user_email?.trim() || null,
     experience_tag: tagValue(row.experience_tag),
     intensity_tag: tagValue(row.intensity_tag),
     style_tag: tagValue(row.style_tag),
     companion_briefing: row.companion_briefing?.trim() || null,
+    user_context_card: row.user_context_card?.trim() || null,
   };
 }
 
@@ -74,7 +79,7 @@ export function BriefingsClient({
       const { data, error: loadError } = await supabase
         .from("match_requests")
         .select(
-          "id,experience_tag,intensity_tag,style_tag,status,companion_id,companion_briefing",
+          "id,user_email,experience_tag,intensity_tag,style_tag,status,companion_id,companion_briefing,user_context_card",
         )
         .eq("companion_id", companionId)
         .eq("status", "matched")
@@ -185,20 +190,11 @@ export function BriefingsClient({
               className="grid gap-4 rounded-2xl border border-orange-100 bg-white/85 p-5 shadow-sm"
               key={card.id}
             >
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-400">
-                  About this person
-                </p>
-                {card.companion_briefing ? (
-                  <p className="mt-2 whitespace-pre-wrap text-[0.97rem] italic leading-7 text-stone-500">
-                    {card.companion_briefing}
-                  </p>
-                ) : (
-                  <p className="mt-2 text-sm italic leading-7 text-stone-400">
-                    Briefing not available for this person.
-                  </p>
-                )}
-              </div>
+              <CompanionHandoffCard
+                companionBriefing={card.companion_briefing}
+                userEmail={card.user_email}
+                userContextCard={card.user_context_card}
+              />
 
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold capitalize text-orange-600">

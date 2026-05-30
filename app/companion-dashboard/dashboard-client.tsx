@@ -1,27 +1,31 @@
 "use client";
 
-import { CheckCircle2, Lightbulb } from "lucide-react";
+import { BellRing, CheckCircle2, Lightbulb, Volume2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
+import { CompanionHandoffCard } from "@/app/components/companion-handoff-card";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 
-type MatchRequestRow =
-  Database["public"]["Tables"]["match_requests"]["Row"];
+type MatchRequestRow = Database["public"]["Tables"]["match_requests"]["Row"];
 
 type WaitingRequest = {
   id: string;
+  user_email: string | null;
   experience_tag: string;
   intensity_tag: string;
   style_tag: string;
   companion_briefing: string | null;
+  user_context_card: string | null;
 };
 
 type DashboardClientProps = {
   companionId: string;
   initialIsOnline: boolean;
 };
+
+type AlertPermission = NotificationPermission | "unsupported";
 
 function tagValue(value: string | null | undefined) {
   return value?.trim() || "unspecified";
@@ -34,17 +38,16 @@ function toWaitingRequest(row: Partial<MatchRequestRow>): WaitingRequest | null 
 
   return {
     id: row.id,
+    user_email: row.user_email?.trim() || null,
     experience_tag: tagValue(row.experience_tag),
     intensity_tag: tagValue(row.intensity_tag),
     style_tag: tagValue(row.style_tag),
     companion_briefing: row.companion_briefing?.trim() || null,
+    user_context_card: row.user_context_card?.trim() || null,
   };
 }
 
-function upsertRequest(
-  current: WaitingRequest[],
-  nextRequest: WaitingRequest,
-) {
+function upsertRequest(current: WaitingRequest[], nextRequest: WaitingRequest) {
   const exists = current.some((request) => request.id === nextRequest.id);
 
   if (exists) {
@@ -56,18 +59,138 @@ function upsertRequest(
   return [...current, nextRequest];
 }
 
+function getAlertCopy(permission: AlertPermission) {
+  if (permission === "granted") {
+    return "Desktop alerts are on. Keep this dashboard open in Chrome while you're online.";
+  }
+
+  if (permission === "denied") {
+    return "Chrome is blocking alerts for this site. Open the lock icon in the address bar, allow notifications, then refresh.";
+  }
+
+  if (permission === "unsupported") {
+    return "This browser does not support desktop notifications for the dashboard flow.";
+  }
+
+  return "Turn on browser alerts, then keep this dashboard open while you're online. On Vercel, HTTPS is enough for this MVP.";
+}
+
 export function CompanionDashboardClient({
   companionId,
   initialIsOnline,
 }: DashboardClientProps) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const seenRequestIdsRef = useRef<Set<string>>(new Set());
   const [isOnline, setIsOnline] = useState(initialIsOnline);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [requests, setRequests] = useState<WaitingRequest[]>([]);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState("CLOSED");
+  const [alertPermission, setAlertPermission] = useState<AlertPermission>(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return "unsupported";
+    }
+
+    return window.Notification.permission;
+  });
+  const [alertFeedback, setAlertFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      const audioContext = audioContextRef.current;
+      audioContextRef.current = null;
+
+      if (audioContext) {
+        void audioContext.close();
+      }
+    };
+  }, []);
+
+  async function playAlertChime() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const audioContext =
+      audioContextRef.current ??
+      (() => {
+        const audioWindow = window as Window & {
+          webkitAudioContext?: typeof AudioContext;
+        };
+        const AudioCtor =
+          window.AudioContext ?? audioWindow.webkitAudioContext ?? null;
+
+        if (!AudioCtor) {
+          return null;
+        }
+
+        const nextContext = new AudioCtor();
+        audioContextRef.current = nextContext;
+        return nextContext;
+      })();
+
+    if (!audioContext) {
+      return;
+    }
+
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const startAt = audioContext.currentTime;
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, startAt);
+    oscillator.frequency.exponentialRampToValueAtTime(659.25, startAt + 0.18);
+
+    gainNode.gain.setValueAtTime(0.0001, startAt);
+    gainNode.gain.exponentialRampToValueAtTime(0.12, startAt + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.28);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.start(startAt);
+    oscillator.stop(startAt + 0.3);
+  }
+
+  const notifyAboutWaitingRequest = useEffectEvent(
+    (request: WaitingRequest) => {
+      void playAlertChime();
+
+      if (
+        typeof window === "undefined" ||
+        alertPermission !== "granted" ||
+        !("Notification" in window)
+      ) {
+        return;
+      }
+
+      try {
+        const notification = new window.Notification(
+          "Someone is waiting in Alongly",
+          {
+            body: `${request.experience_tag} - ${request.style_tag}`,
+            icon: "/brand/alongly-icon-192.png",
+            tag: `waiting-request-${request.id}`,
+          },
+        );
+
+        notification.onclick = () => {
+          notification.close();
+          window.focus();
+        };
+      } catch {
+        setAlertFeedback(
+          "Chrome could not show the desktop alert, but the dashboard is still listening for new requests.",
+        );
+      }
+    },
+  );
 
   useEffect(() => {
     if (!isOnline) {
@@ -80,7 +203,7 @@ export function CompanionDashboardClient({
       const { data, error: loadError } = await supabase
         .from("match_requests")
         .select(
-          "id,experience_tag,intensity_tag,style_tag,status,companion_briefing",
+          "id,user_email,experience_tag,intensity_tag,style_tag,status,companion_briefing,user_context_card",
         )
         .eq("status", "waiting")
         .order("created_at", { ascending: true });
@@ -94,11 +217,14 @@ export function CompanionDashboardClient({
         return;
       }
 
-      setRequests(
-        (data ?? [])
-          .map((row) => toWaitingRequest(row))
-          .filter((row): row is WaitingRequest => Boolean(row)),
+      const nextRequests = (data ?? [])
+        .map((row) => toWaitingRequest(row))
+        .filter((row): row is WaitingRequest => Boolean(row));
+
+      seenRequestIdsRef.current = new Set(
+        nextRequests.map((request) => request.id),
       );
+      setRequests(nextRequests);
     }
 
     void loadWaitingRequests();
@@ -118,8 +244,16 @@ export function CompanionDashboardClient({
             payload.new as Partial<MatchRequestRow>,
           );
 
-          if (nextRequest) {
-            setRequests((current) => upsertRequest(current, nextRequest));
+          if (!nextRequest) {
+            return;
+          }
+
+          const isNewRequest = !seenRequestIdsRef.current.has(nextRequest.id);
+          seenRequestIdsRef.current.add(nextRequest.id);
+          setRequests((current) => upsertRequest(current, nextRequest));
+
+          if (isNewRequest) {
+            notifyAboutWaitingRequest(nextRequest);
           }
         },
       )
@@ -135,11 +269,13 @@ export function CompanionDashboardClient({
           const nextRequest = toWaitingRequest(updatedRow);
 
           if (nextRequest) {
+            seenRequestIdsRef.current.add(nextRequest.id);
             setRequests((current) => upsertRequest(current, nextRequest));
             return;
           }
 
           if (updatedRow.id) {
+            seenRequestIdsRef.current.delete(updatedRow.id);
             setRequests((current) =>
               current.filter((request) => request.id !== updatedRow.id),
             );
@@ -157,6 +293,7 @@ export function CompanionDashboardClient({
           const deletedRow = payload.old as Partial<MatchRequestRow>;
 
           if (deletedRow.id) {
+            seenRequestIdsRef.current.delete(deletedRow.id);
             setRequests((current) =>
               current.filter((request) => request.id !== deletedRow.id),
             );
@@ -173,6 +310,43 @@ export function CompanionDashboardClient({
     };
   }, [isOnline, supabase]);
 
+  async function enableAlerts() {
+    setAlertFeedback(null);
+
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setAlertPermission("unsupported");
+      return;
+    }
+
+    try {
+      const permission = await window.Notification.requestPermission();
+      setAlertPermission(permission);
+
+      if (permission === "granted") {
+        await playAlertChime();
+        setAlertFeedback(
+          "Alerts are ready. Keep this dashboard open in Chrome while you're online.",
+        );
+        return;
+      }
+
+      if (permission === "denied") {
+        setAlertFeedback(
+          "Chrome blocked alerts. Open the lock icon in the address bar, allow notifications, then refresh this page.",
+        );
+        return;
+      }
+
+      setAlertFeedback(
+        "Notification permission was dismissed, so desktop alerts are still off.",
+      );
+    } catch {
+      setAlertFeedback(
+        "We couldn't turn on alerts from this browser session. Try again from Chrome after reloading the dashboard.",
+      );
+    }
+  }
+
   async function toggleOnline(nextValue: boolean) {
     const previousValue = isOnline;
 
@@ -181,6 +355,7 @@ export function CompanionDashboardClient({
     setIsSavingStatus(true);
 
     if (!nextValue) {
+      seenRequestIdsRef.current = new Set();
       setRequests([]);
       setRealtimeStatus("CLOSED");
     }
@@ -223,6 +398,7 @@ export function CompanionDashboardClient({
 
     if (count === 0) {
       setAcceptingId(null);
+      seenRequestIdsRef.current.delete(requestId);
       setRequests((current) =>
         current.filter((request) => request.id !== requestId),
       );
@@ -233,6 +409,8 @@ export function CompanionDashboardClient({
     router.push(`/room/${requestId}`);
   }
 
+  const alertCopy = getAlertCopy(alertPermission);
+
   return (
     <section className="mobile-scroll h-full overflow-y-auto px-5 py-5">
       <div className="mb-5 flex items-center justify-between gap-4 rounded-lg border border-orange-100 bg-white/75 p-4 shadow-sm">
@@ -240,7 +418,7 @@ export function CompanionDashboardClient({
           <h2 className="text-lg font-bold text-stone-950">Availability</h2>
           <p className="mt-1 truncate text-sm font-medium text-stone-500">
             {isOnline ? "Online" : "Offline"}
-            {isOnline ? ` · ${realtimeStatus.toLowerCase()}` : ""}
+            {isOnline ? ` - ${realtimeStatus.toLowerCase()}` : ""}
           </p>
         </div>
 
@@ -266,6 +444,61 @@ export function CompanionDashboardClient({
         </button>
       </div>
 
+      <article className="mb-5 rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50/80 to-white p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-600">
+              Live alerts
+            </p>
+            <h3 className="mt-1 text-lg font-bold text-stone-950">
+              Get notified when someone is waiting.
+            </h3>
+            <p className="mt-2 text-sm leading-7 text-stone-600">
+              {alertCopy}
+            </p>
+          </div>
+
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-teal-600 shadow-sm">
+            <BellRing aria-hidden="true" size={20} strokeWidth={2.2} />
+          </span>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-3">
+          {alertPermission === "granted" ? (
+            <button
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-teal-200 bg-white px-4 text-sm font-semibold text-teal-700 transition hover:bg-teal-50"
+              onClick={() => void playAlertChime()}
+              type="button"
+            >
+              <Volume2 aria-hidden="true" size={16} strokeWidth={2.2} />
+              Test sound
+            </button>
+          ) : (
+            <button
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-teal-600 px-4 text-sm font-semibold text-white transition hover:bg-teal-700"
+              onClick={() => void enableAlerts()}
+              type="button"
+            >
+              <BellRing aria-hidden="true" size={16} strokeWidth={2.2} />
+              Enable alerts
+            </button>
+          )}
+
+          <span className="inline-flex items-center rounded-full border border-stone-200 bg-white px-4 text-xs font-semibold text-stone-500">
+            Works best with this Chrome tab open on Vercel HTTPS
+          </span>
+        </div>
+
+        {alertFeedback ? (
+          <p
+            aria-live="polite"
+            className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+          >
+            {alertFeedback}
+          </p>
+        ) : null}
+      </article>
+
       {error ? (
         <p
           aria-live="polite"
@@ -282,9 +515,7 @@ export function CompanionDashboardClient({
           </div>
         ) : null}
 
-        {isOnline && requests.length === 0 ? (
-          <WhileYouWaitTip />
-        ) : null}
+        {isOnline && requests.length === 0 ? <WhileYouWaitTip /> : null}
 
         {isOnline
           ? requests.map((request) => (
@@ -292,16 +523,11 @@ export function CompanionDashboardClient({
                 className="grid gap-4 rounded-lg border border-orange-100 bg-white/80 p-4 shadow-sm"
                 key={request.id}
               >
-                {request.companion_briefing ? (
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-400">
-                      About this person
-                    </p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm italic leading-7 text-stone-500">
-                      {request.companion_briefing}
-                    </p>
-                  </div>
-                ) : null}
+                <CompanionHandoffCard
+                  companionBriefing={request.companion_briefing}
+                  userEmail={request.user_email}
+                  userContextCard={request.user_context_card}
+                />
 
                 <dl className="grid gap-3">
                   <div>
@@ -342,7 +568,7 @@ export function CompanionDashboardClient({
 const tips = [
   {
     title: "Reflect, don't fix.",
-    body: "Try mirroring what they said back in your own words before offering anything. “Sounds like that left you feeling alone” goes further than advice.",
+    body: "Try mirroring what they said back in your own words before offering anything. \"Sounds like that left you feeling alone\" goes further than advice.",
   },
   {
     title: "Silence is a tool.",
@@ -350,7 +576,7 @@ const tips = [
   },
   {
     title: "Name the feeling.",
-    body: "Gentle labels help: “that sounds exhausting,” “that sounds scary.” It tells them they’ve been heard.",
+    body: "Gentle labels help: \"that sounds exhausting,\" \"that sounds scary.\" It tells them they've been heard.",
   },
   {
     title: "Their story isn't yours.",
@@ -358,7 +584,7 @@ const tips = [
   },
   {
     title: "Ask, don't assume.",
-    body: "“What would feel like support right now?” — sometimes they want to vent, not solve.",
+    body: "\"What would feel like support right now?\" - sometimes they want to vent, not solve.",
   },
 ];
 

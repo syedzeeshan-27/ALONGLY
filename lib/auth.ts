@@ -31,6 +31,8 @@ export function postAuthRedirectPath(value: unknown, role: ProfileRole) {
   if (
     path === "/chat" ||
     path.startsWith("/chat/") ||
+    path === "/sessions" ||
+    path.startsWith("/sessions/") ||
     path === "/you" ||
     path.startsWith("/you/") ||
     path === "/breathe" ||

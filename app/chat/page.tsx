@@ -23,7 +23,7 @@ export default async function ChatPage() {
 
   return (
     <MobileAppShell activeTab="chat" subtitle="Always here for you">
-      <ChatClient userId={user.id} />
+      <ChatClient userEmail={user.email ?? null} userId={user.id} />
     </MobileAppShell>
   );
 }
