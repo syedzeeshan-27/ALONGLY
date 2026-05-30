@@ -8,7 +8,7 @@ import {
   type CSSProperties,
 } from "react";
 import Link from "next/link";
-import { ChevronUp } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Profile = {
   name: string;
@@ -98,7 +98,7 @@ export function CompanionShowcase({
   const [drag, setDrag] = useState(0);
   const [reduce, setReduce] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  const startYRef = useRef(0);
+  const startXRef = useRef(0);
   const exitTimer = useRef<number | null>(null);
 
   const desktopActive = hovered ?? active;
@@ -153,21 +153,30 @@ export function CompanionShowcase({
     setActive(i);
   };
 
-  // ── Mobile touch (swipe up to advance) ──
+  // Step back to the previous card. No exit overlay needed — the cards simply
+  // animate to their new positions (the card behind slides forward).
+  const goPrev = () => {
+    if (exitTimer.current !== null) return;
+    setExiting(false);
+    setDrag(0);
+    setActive((a) => (a - 1 + n) % n);
+  };
+
+  // ── Mobile touch (swipe right to advance) ──
   const onTouchStart = (e: React.TouchEvent) => {
     if (exitTimer.current !== null) return;
-    startYRef.current = e.touches[0].clientY;
+    startXRef.current = e.touches[0].clientX;
     setDragging(true);
   };
   const onTouchMove = (e: React.TouchEvent) => {
     if (!dragging) return;
-    const dy = e.touches[0].clientY - startYRef.current;
-    // Follow the finger upward; resist downward pulls.
-    setDrag(Math.max(-220, Math.min(24, dy)));
+    const dx = e.touches[0].clientX - startXRef.current;
+    // Follow the finger rightward; resist leftward pulls.
+    setDrag(Math.max(-24, Math.min(240, dx)));
   };
   const onTouchEnd = () => {
     setDragging(false);
-    if (drag < -SWIPE_THRESHOLD) advance();
+    if (drag > SWIPE_THRESHOLD) advance();
     else setDrag(0);
   };
 
@@ -214,9 +223,9 @@ export function CompanionShowcase({
 
             let style: CSSProperties;
             if (isFront && exiting) {
-              // Swipe up + slight tilt + fade out.
+              // Swipe right + slight tilt + fade out.
               style = {
-                transform: "translateY(-128%) rotate(-5deg) scale(0.95)",
+                transform: "translateX(128%) rotate(5deg) scale(0.95)",
                 opacity: 0,
                 zIndex: 40,
                 transition: `transform ${EXIT_MS}ms cubic-bezier(0.4, 0, 0.2, 1), opacity ${EXIT_MS}ms ease`,
@@ -224,7 +233,7 @@ export function CompanionShowcase({
             } else if (isFront) {
               const d = dragging ? drag : 0;
               style = {
-                transform: `translateY(${d}px) rotate(${d * 0.02}deg)`,
+                transform: `translateX(${d}px) rotate(${d * 0.02}deg)`,
                 opacity: 1,
                 zIndex: 40,
                 transition: dragging
@@ -232,11 +241,11 @@ export function CompanionShowcase({
                   : `transform 540ms ${EASE}, opacity 540ms ease`,
               };
             } else {
-              // Cards stacked behind, peeking as a thin lip above the front card
-              // so it clearly reads as a deck. Only the immediate next card shows.
+              // Cards stacked behind, peeking as a thin lip to the right of the
+              // front card so it reads as a deck. Only the next card shows.
               const depth = pos;
               style = {
-                transform: `translateY(${-depth * 14}px) scale(${1 - depth * 0.05})`,
+                transform: `translateX(${depth * 14}px) scale(${1 - depth * 0.05})`,
                 opacity: depth >= 2 ? 0 : reduce ? 1 : 0.6,
                 zIndex: 40 - depth,
                 // Back-most card snaps (no transition) so the exited card can
@@ -259,36 +268,45 @@ export function CompanionShowcase({
           })}
         </div>
 
-        {/* Swipe affordance */}
-        <div className="mt-5 flex items-center justify-center gap-1.5 text-xs font-medium text-[#7d958c]">
-          <ChevronUp
-            aria-hidden="true"
-            size={15}
-            strokeWidth={2.4}
-            className="companion-swipe-hint"
-          />
-          Swipe up for the next style
-        </div>
+        {/* Prev / dots / next controls */}
+        <div className="mt-6 flex items-center justify-center gap-5">
+          <button
+            type="button"
+            aria-label="Previous companion"
+            onClick={goPrev}
+            className="grid h-11 w-11 place-items-center rounded-full border border-[#d7e8e2] bg-white text-[#4e8b82] shadow-[0_10px_30px_rgba(80,116,107,0.1)] transition hover:border-[#9fc9bf] hover:bg-[#f0f8f5] active:scale-95"
+          >
+            <ChevronLeft aria-hidden="true" size={20} strokeWidth={2.3} />
+          </button>
 
-        {/* Progress dots */}
-        <div className="mt-4 flex items-center justify-center gap-2">
-          {profiles.map((profile, i) => {
-            const isActive = i === active;
-            return (
-              <button
-                key={profile.name}
-                type="button"
-                aria-label={`Show ${profile.name}`}
-                aria-current={isActive}
-                onClick={() => jumpTo(i)}
-                className={`h-2 rounded-full transition-all duration-500 ${
-                  isActive
-                    ? "w-6 bg-[#78afa4]"
-                    : "w-2 bg-[#cadfd8] hover:bg-[#a9cdc3]"
-                }`}
-              />
-            );
-          })}
+          <div className="flex items-center gap-2">
+            {profiles.map((profile, i) => {
+              const isActive = i === active;
+              return (
+                <button
+                  key={profile.name}
+                  type="button"
+                  aria-label={`Show ${profile.name}`}
+                  aria-current={isActive}
+                  onClick={() => jumpTo(i)}
+                  className={`h-2 rounded-full transition-all duration-500 ${
+                    isActive
+                      ? "w-6 bg-[#78afa4]"
+                      : "w-2 bg-[#cadfd8] hover:bg-[#a9cdc3]"
+                  }`}
+                />
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            aria-label="Next companion"
+            onClick={advance}
+            className="grid h-11 w-11 place-items-center rounded-full border border-[#d7e8e2] bg-white text-[#4e8b82] shadow-[0_10px_30px_rgba(80,116,107,0.1)] transition hover:border-[#9fc9bf] hover:bg-[#f0f8f5] active:scale-95"
+          >
+            <ChevronRight aria-hidden="true" size={20} strokeWidth={2.3} />
+          </button>
         </div>
       </div>
     </>

@@ -117,6 +117,7 @@ const footerLinks = [
     links: [
       { label: "How it works", href: "#how-it-works" },
       { label: "Compare", href: "#comparison" },
+      { label: "Changelog", href: "/changelog" },
       { label: "FAQ", href: "#faq" },
     ],
   },

@@ -465,21 +465,6 @@ button, textarea, input, select { font: inherit; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.companion-swipe-hint {
-  animation: companion-swipe-hint 2.4s ease-in-out infinite;
-}
-
-@keyframes companion-swipe-hint {
-  0%, 100% { transform: translateY(2px); opacity: 0.6; }
-  50% { transform: translateY(-3px); opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .companion-swipe-hint {
-    animation: none;
-  }
-}
-
 @keyframes why-marquee-scroll {
   from { transform: translate3d(0, 0, 0); }
   /* Track holds two copies of the cards, so -50% advances exactly one
