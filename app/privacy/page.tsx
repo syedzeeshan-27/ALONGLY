@@ -76,7 +76,7 @@ const sections = [
     id: "crisis",
     title: "A note on crisis situations",
     paragraphs: [
-      "Alongly is not emergency care. If you or someone else may be in immediate danger, call local emergency services. In the United States, call or text 988, or chat at 988lifeline.org, to reach the Suicide & Crisis Lifeline. Alongly companions are not trained crisis responders and the service is not a substitute for emergency or clinical care.",
+      "Alongly is not emergency care. If you or someone else may be in immediate danger, call local emergency services — in India, dial 112. Alongly companions are not trained crisis responders and the service is not a substitute for emergency or clinical care.",
       "Alongly is a peer support product, not a clinical service. Companions are not licensed professionals and are not subject to mandatory reporting obligations in the way therapists are. In exceptional circumstances where there is a clear and serious risk to life, we reserve the right to act in accordance with applicable law.",
     ],
   },

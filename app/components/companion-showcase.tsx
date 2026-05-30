@@ -20,8 +20,6 @@ type Profile = {
 };
 
 const ADVANCE_MS = 4200;
-const EXIT_MS = 470;
-const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const SWIPE_THRESHOLD = 78;
 
 // The card face itself — identical content/design to the original markup.
@@ -35,10 +33,10 @@ function CompanionCard({
 }) {
   return (
     <article
-      className={`flex h-full min-h-[29rem] flex-col rounded-[1.75rem] border p-5 transition-[box-shadow,border-color,background-color] duration-700 ease-out ${
+      className={`companion-ring flex h-full min-h-[29rem] flex-col rounded-[1.75rem] p-5 transition-shadow duration-700 ease-out ${
         elevated
-          ? "border-[#c2e1d7] bg-white shadow-[0_34px_90px_rgba(80,116,107,0.2)]"
-          : "border-[#d7e8e2] bg-[#fcfffd] shadow-[0_18px_55px_rgba(80,116,107,0.08)]"
+          ? "companion-ring-active shadow-[0_20px_55px_rgba(80,116,107,0.1)]"
+          : "shadow-[0_18px_55px_rgba(80,116,107,0.08)]"
       }`}
     >
       <div className="flex items-start justify-between gap-4">
@@ -93,34 +91,15 @@ export function CompanionShowcase({
   const n = profiles.length;
   const [active, setActive] = useState(0);
   const [hovered, setHovered] = useState<number | null>(null);
-  const [exiting, setExiting] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const [drag, setDrag] = useState(0);
   const [reduce, setReduce] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const startXRef = useRef(0);
-  const exitTimer = useRef<number | null>(null);
 
   const desktopActive = hovered ?? active;
 
-  // Advance to the next card. On mobile this plays the front card's swipe-up
-  // exit first, then promotes the next card once it has cleared.
-  const advance = useCallback(() => {
-    if (exitTimer.current !== null) return;
-    setExiting(true);
-    exitTimer.current = window.setTimeout(() => {
-      setActive((a) => (a + 1) % n);
-      setDrag(0);
-      setExiting(false);
-      exitTimer.current = null;
-    }, EXIT_MS);
-  }, [n]);
-
-  useEffect(() => {
-    return () => {
-      if (exitTimer.current !== null) window.clearTimeout(exitTimer.current);
-    };
-  }, []);
+  const advance = useCallback(() => setActive((a) => (a + 1) % n), [n]);
+  const goPrev = useCallback(() => setActive((a) => (a - 1 + n) % n), [n]);
+  const jumpTo = (i: number) => setActive(i);
 
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -138,47 +117,25 @@ export function CompanionShowcase({
     };
   }, []);
 
-  // Auto-rotate the active highlight on desktop only. On mobile the deck stays
-  // still so the card can be read and tapped — it advances only on swipe.
+  // Auto-rotate the active highlight on desktop only. On mobile the card stays
+  // still so it can be read and tapped — it changes only on button tap / swipe.
   useEffect(() => {
-    if (reduce || !isDesktop || hovered !== null || dragging) return;
+    if (reduce || !isDesktop || hovered !== null) return;
     const id = window.setInterval(advance, ADVANCE_MS);
     return () => window.clearInterval(id);
-  }, [advance, reduce, isDesktop, hovered, dragging]);
+  }, [advance, reduce, isDesktop, hovered]);
 
-  const jumpTo = (i: number) => {
-    if (exitTimer.current !== null || i === active) return;
-    setExiting(false);
-    setDrag(0);
-    setActive(i);
-  };
-
-  // Step back to the previous card. No exit overlay needed — the cards simply
-  // animate to their new positions (the card behind slides forward).
-  const goPrev = () => {
-    if (exitTimer.current !== null) return;
-    setExiting(false);
-    setDrag(0);
-    setActive((a) => (a - 1 + n) % n);
-  };
-
-  // ── Mobile touch (swipe right to advance) ──
+  // ── Mobile swipe: left → next, right → previous ──
   const onTouchStart = (e: React.TouchEvent) => {
-    if (exitTimer.current !== null) return;
     startXRef.current = e.touches[0].clientX;
-    setDragging(true);
   };
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!dragging) return;
-    const dx = e.touches[0].clientX - startXRef.current;
-    // Follow the finger rightward; resist leftward pulls.
-    setDrag(Math.max(-24, Math.min(240, dx)));
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - startXRef.current;
+    if (dx <= -SWIPE_THRESHOLD) advance();
+    else if (dx >= SWIPE_THRESHOLD) goPrev();
   };
-  const onTouchEnd = () => {
-    setDragging(false);
-    if (drag > SWIPE_THRESHOLD) advance();
-    else setDrag(0);
-  };
+
+  const mobileProfile = profiles[active];
 
   return (
     <>
@@ -189,9 +146,8 @@ export function CompanionShowcase({
           const style: CSSProperties = reduce
             ? {}
             : {
-                transform: `scale(${isActive ? 1.035 : 0.955})`,
-                opacity: isActive ? 1 : 0.68,
-                filter: isActive ? "none" : "saturate(0.92)",
+                transform: `scale(${isActive ? 1.035 : 0.97})`,
+                opacity: isActive ? 1 : 0.92,
                 zIndex: isActive ? 2 : 1,
               };
           return (
@@ -208,64 +164,13 @@ export function CompanionShowcase({
         })}
       </div>
 
-      {/* ── Mobile: swipe-up story deck ── */}
+      {/* ── Mobile: one card at a time, navigated by buttons / swipe ── */}
       <div className="lg:hidden">
-        <div
-          className="relative h-[31rem] [perspective:1200px]"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-        >
-          {profiles.map((profile, i) => {
-            const pos = (i - active + n) % n;
-            const isFront = pos === 0;
-            const isBack = pos === n - 1;
-
-            let style: CSSProperties;
-            if (isFront && exiting) {
-              // Swipe right + slight tilt + fade out.
-              style = {
-                transform: "translateX(128%) rotate(5deg) scale(0.95)",
-                opacity: 0,
-                zIndex: 40,
-                transition: `transform ${EXIT_MS}ms cubic-bezier(0.4, 0, 0.2, 1), opacity ${EXIT_MS}ms ease`,
-              };
-            } else if (isFront) {
-              const d = dragging ? drag : 0;
-              style = {
-                transform: `translateX(${d}px) rotate(${d * 0.02}deg)`,
-                opacity: 1,
-                zIndex: 40,
-                transition: dragging
-                  ? "none"
-                  : `transform 540ms ${EASE}, opacity 540ms ease`,
-              };
-            } else {
-              // Cards stacked behind, peeking as a thin lip to the right of the
-              // front card so it reads as a deck. Only the next card shows.
-              const depth = pos;
-              style = {
-                transform: `translateX(${depth * 14}px) scale(${1 - depth * 0.05})`,
-                opacity: depth >= 2 ? 0 : reduce ? 1 : 0.6,
-                zIndex: 40 - depth,
-                // Back-most card snaps (no transition) so the exited card can
-                // reappear at the bottom of the stack without sliding through.
-                transition: isBack
-                  ? "none"
-                  : `transform 540ms ${EASE}, opacity 540ms ease`,
-              };
-            }
-
-            return (
-              <div
-                key={profile.name}
-                className="absolute inset-0 transform-gpu will-change-transform"
-                style={style}
-              >
-                <CompanionCard profile={profile} elevated={isFront} />
-              </div>
-            );
-          })}
+        <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+          {/* key swaps the card on change with a soft fade — no moving deck. */}
+          <div key={mobileProfile.name} className="companion-card-fade">
+            <CompanionCard profile={mobileProfile} elevated />
+          </div>
         </div>
 
         {/* Prev / dots / next controls */}

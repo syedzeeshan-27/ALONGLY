@@ -373,6 +373,54 @@ button, textarea, input, select { font: inherit; }
   }
 }
 
+/* Soft fade when the mobile companion card is swapped (no moving deck). */
+.companion-card-fade {
+  animation: companion-card-fade 260ms ease both;
+}
+
+@keyframes companion-card-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .companion-card-fade {
+    animation: none;
+  }
+}
+
+/* ── Companion card gradient border ── */
+/* A soft brand-tone gradient ring (green → peach → blue) drawn via the
+   padding-box / border-box clip trick so it follows the rounded corners. */
+.companion-ring {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(#fcfffd, #fcfffd) padding-box,
+    linear-gradient(
+        135deg,
+        rgba(122, 175, 164, 0.55),
+        rgba(247, 216, 200, 0.5),
+        rgba(160, 200, 224, 0.5)
+      )
+      border-box;
+  transition:
+    background 600ms ease,
+    box-shadow 700ms ease;
+}
+
+.companion-ring-active {
+  border-width: 2px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(
+        135deg,
+        rgba(110, 170, 158, 0.95),
+        rgba(245, 205, 185, 0.9),
+        rgba(150, 195, 222, 0.9)
+      )
+      border-box;
+}
+
 /* ── Scrollbar ── */
 .mobile-scroll { scrollbar-width: thin; scrollbar-color: #f4b27d transparent; }
 .mobile-scroll::-webkit-scrollbar { width: 0.4rem; }

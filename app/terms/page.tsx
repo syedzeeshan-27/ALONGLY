@@ -71,8 +71,7 @@ const sections = [
     id: "crisis-and-safety",
     title: "Crisis and safety",
     paragraphs: [
-      "Alongly is not an emergency service. If you or someone else is in immediate danger, stop and call your local emergency services now.",
-      "In the United States, you can also call or text 988, or chat at 988lifeline.org, to reach the Suicide & Crisis Lifeline.",
+      "Alongly is not an emergency service. If you or someone else is in immediate danger, stop and call your local emergency services now — in India, dial 112.",
       "If we become aware of a situation where there is a clear and serious risk to life, we reserve the right to act in accordance with applicable law, including contacting emergency services.",
     ],
   },

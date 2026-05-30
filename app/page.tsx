@@ -105,9 +105,7 @@ const faqs = [
   {
     question: "What happens in a crisis?",
     answer:
-      "Alongly is not emergency care. If you or someone else may be in immediate danger, call local emergency services now. In the U.S., call or text 988, or chat at 988lifeline.org, to reach the 988 Suicide & Crisis Lifeline.",
-    href: "https://988lifeline.org/",
-    linkLabel: "Open 988 Lifeline",
+      "Alongly is not emergency care. If you or someone else may be in immediate danger, call your local emergency services now — in India, dial 112.",
   },
 ];
 
@@ -132,7 +130,7 @@ const footerLinks = [
   {
     title: "Resources",
     links: [
-      { label: "988 Lifeline", href: "https://988lifeline.org/", external: true },
+      { label: "Emergency: 112", href: "tel:112", external: true },
       {
         label: "Companion waitlist",
         href: companionWaitlistHref,
