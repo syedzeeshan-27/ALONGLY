@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Wind } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useCallback } from "react";
 
 import { useLocalStorage } from "@/lib/use-local-storage";
@@ -135,22 +135,6 @@ export function HomeClient() {
           <ArrowRight aria-hidden="true" size={22} strokeWidth={2.4} />
         </span>
       </Link>
-
-      <Link
-        className="flex items-center gap-4 rounded-3xl border border-teal-100 bg-teal-50/70 px-5 py-5 text-left transition hover:bg-teal-50 active:scale-[0.99]"
-        href="/breathe"
-      >
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-teal-600 shadow-sm">
-          <Wind aria-hidden="true" size={22} strokeWidth={2.2} />
-        </span>
-        <span className="flex flex-1 flex-col gap-0.5">
-          <span className="text-base font-bold text-stone-950">Breathe</span>
-          <span className="text-sm text-stone-500">
-            30 seconds of box breathing
-          </span>
-        </span>
-      </Link>
-
     </section>
   );
 }

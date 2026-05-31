@@ -76,9 +76,20 @@ function parseTaggedResponse(content: string) {
   return { visibleContent, tags: null };
 }
 
+function resizeComposer(element: HTMLTextAreaElement | null) {
+  if (!element) {
+    return;
+  }
+
+  element.style.height = "0px";
+  element.style.height = `${Math.min(element.scrollHeight, 144)}px`;
+  element.style.overflowY = element.scrollHeight > 144 ? "auto" : "hidden";
+}
+
 export function ChatClient({ userEmail, userId }: ChatClientProps) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     createMessage(
@@ -205,6 +216,10 @@ export function ChatClient({ userEmail, userId }: ChatClientProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isSending]);
+
+  useEffect(() => {
+    resizeComposer(composerRef.current);
+  }, [draft]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -359,13 +374,18 @@ export function ChatClient({ userEmail, userId }: ChatClientProps) {
             Message
           </label>
           <textarea
-            className="max-h-28 min-h-12 flex-1 resize-none rounded-full border border-stone-200 bg-white px-5 py-3 text-base leading-6 text-stone-950 outline-none transition placeholder:text-stone-400 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            className="chat-composer-input mobile-scroll min-h-12 flex-1 resize-none rounded-[26px] border border-stone-200 bg-white px-5 py-3 text-base leading-6 text-stone-950 outline-none transition placeholder:text-stone-400 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
             disabled={isSending}
             id="chat-message"
             name="message"
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              resizeComposer(event.currentTarget);
+            }}
             placeholder="Type your message..."
+            ref={composerRef}
             rows={1}
+            spellCheck={false}
             value={draft}
           />
           <button

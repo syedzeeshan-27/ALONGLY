@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, SendHorizontal } from "lucide-react";
+import { Heart, Phone, SendHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   FormEvent,
@@ -18,12 +18,15 @@ type MessageRow = Database["public"]["Tables"]["messages"]["Row"];
 type MatchRequestRow = Database["public"]["Tables"]["match_requests"]["Row"];
 
 type RoomClientProps = {
+  companionId: string | null;
   completedRedirectPath: string;
   roomId: string;
   currentUserId: string;
+  initialIsSavedCompanion: boolean;
   initialMessages: MessageRow[];
   initialVoiceRoomUrl: string | null;
   initialMessagesError?: string | null;
+  isCompanion: boolean;
 };
 
 const VOICE_ROOM_STARTED = "VOICE_ROOM_STARTED";
@@ -48,16 +51,30 @@ function removeMessage(current: MessageRow[], messageId: string) {
   return current.filter((message) => message.id !== messageId);
 }
 
+function resizeComposer(element: HTMLTextAreaElement | null) {
+  if (!element) {
+    return;
+  }
+
+  element.style.height = "0px";
+  element.style.height = `${Math.min(element.scrollHeight, 144)}px`;
+  element.style.overflowY = element.scrollHeight > 144 ? "auto" : "hidden";
+}
+
 export function RoomClient({
+  companionId,
   completedRedirectPath,
   roomId,
   currentUserId,
+  initialIsSavedCompanion,
   initialMessages,
   initialVoiceRoomUrl,
   initialMessagesError = null,
+  isCompanion,
 }: RoomClientProps) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const isRefreshingMessages = useRef(false);
   const [messages, setMessages] = useState(() => sortMessages(initialMessages));
@@ -65,6 +82,10 @@ export function RoomClient({
   const [error, setError] = useState<string | null>(initialMessagesError);
   const [isSending, setIsSending] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
+  const [isSavingCompanion, setIsSavingCompanion] = useState(false);
+  const [isSavedCompanion, setIsSavedCompanion] = useState(
+    initialIsSavedCompanion,
+  );
   const [voiceRoomUrl, setVoiceRoomUrl] = useState<string | null>(
     initialVoiceRoomUrl,
   );
@@ -158,6 +179,10 @@ export function RoomClient({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    resizeComposer(composerRef.current);
+  }, [draft]);
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -259,6 +284,36 @@ export function RoomClient({
     void refreshMessages();
   }
 
+  async function saveCompanion() {
+    if (!companionId || isSavingCompanion || isSavedCompanion) {
+      return;
+    }
+
+    setError(null);
+    setIsSavingCompanion(true);
+
+    const { error: saveError } = await supabase
+      .from("saved_companions")
+      .upsert(
+        {
+          user_id: currentUserId,
+          companion_id: companionId,
+          last_room_id: roomId,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,companion_id" },
+      );
+
+    setIsSavingCompanion(false);
+
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+
+    setIsSavedCompanion(true);
+  }
+
   async function endConversation() {
     setError(null);
     setIsEnding(true);
@@ -310,6 +365,39 @@ export function RoomClient({
           </div>
         </div>
       </div>
+
+      {!isCompanion && companionId ? (
+        <div className="shrink-0 border-b border-orange-100 bg-white/55 px-5 py-3">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-teal-100 bg-teal-50/70 px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-stone-950">
+                Keep this companion for next time
+              </p>
+              <p className="mt-0.5 truncate text-xs font-medium text-stone-500">
+                Saves them to your profile for the walkthrough continuity flow.
+              </p>
+            </div>
+            <button
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-teal-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+              disabled={isSavingCompanion || isSavedCompanion}
+              onClick={() => void saveCompanion()}
+              type="button"
+            >
+              <Heart
+                aria-hidden="true"
+                className={isSavedCompanion ? "fill-white" : undefined}
+                size={16}
+                strokeWidth={2.3}
+              />
+              {isSavedCompanion
+                ? "Saved"
+                : isSavingCompanion
+                  ? "Saving..."
+                  : "Save"}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mobile-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
         {messages.length === 0 ? (
@@ -386,13 +474,18 @@ export function RoomClient({
             Message
           </label>
           <textarea
-            className="max-h-28 min-h-12 flex-1 resize-none rounded-full border border-stone-200 bg-white px-5 py-3 text-base leading-6 text-stone-950 outline-none transition placeholder:text-stone-400 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            className="chat-composer-input mobile-scroll min-h-12 flex-1 resize-none rounded-[26px] border border-stone-200 bg-white px-5 py-3 text-base leading-6 text-stone-950 outline-none transition placeholder:text-stone-400 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
             disabled={isSending || isEnding}
             id="room-message"
             name="message"
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              resizeComposer(event.currentTarget);
+            }}
             placeholder="Type your message..."
+            ref={composerRef}
             rows={1}
+            spellCheck={false}
             value={draft}
           />
           <button

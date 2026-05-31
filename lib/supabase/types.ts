@@ -107,6 +107,28 @@ export type Database = {
         };
         Relationships: [];
       };
+      saved_companions: {
+        Row: {
+          user_id: string;
+          companion_id: string;
+          last_room_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          companion_id: string;
+          last_room_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          companion_id?: string;
+          last_room_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

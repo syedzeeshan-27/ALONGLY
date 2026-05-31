@@ -171,8 +171,8 @@ export function MobileAppShell({
   const activeLabel = tabs.find((tab) => tab.id === activeTab)?.label ?? title;
 
   return (
-    <main className="min-h-dvh bg-[#fbf7f1] text-stone-950">
-      <section className="flex h-dvh w-full flex-col overflow-hidden bg-[#fbf7f1] md:flex-row">
+    <main className="mobile-app-viewport bg-[#fbf7f1] text-stone-950">
+      <section className="flex h-full w-full flex-col overflow-hidden bg-[#fbf7f1] md:flex-row">
         {hideNav ? null : (
           <aside className="hidden shrink-0 flex-col border-r border-stone-200/70 bg-[#f6f0e8] px-4 py-6 md:flex md:w-60 lg:w-72">
             <div className="px-2">
@@ -193,7 +193,7 @@ export function MobileAppShell({
 
         <div className="flex min-h-0 flex-1 flex-col">
           {hideNav ? null : (
-            <header className="safe-top shrink-0 border-b border-stone-200/70 bg-[#fbf7f1]/95 px-5 backdrop-blur md:px-7">
+            <header className="safe-top mobile-app-header shrink-0 border-b border-stone-200/70 bg-[#fbf7f1]/95 px-5 backdrop-blur md:px-7">
               <div className="flex items-center justify-between gap-4 py-3.5">
                 <div className="md:hidden">
                   <Brand dotClass={dotClass} subtitle={subtitle} title={title} />
@@ -215,7 +215,7 @@ export function MobileAppShell({
           </div>
 
           {hideNav ? null : (
-            <nav className="safe-bottom shrink-0 border-t border-orange-100/70 bg-[#fbf7f1]/95 px-3 pt-2 backdrop-blur md:hidden">
+            <nav className="safe-bottom mobile-bottom-nav shrink-0 border-t border-orange-100/70 bg-[#fbf7f1]/95 px-3 pt-2 backdrop-blur md:hidden">
               <div className={`grid ${gridCols} gap-1`}>
                 {tabs.map((item) => (
                   <BottomTab activeTab={activeTab} item={item} key={item.id} />

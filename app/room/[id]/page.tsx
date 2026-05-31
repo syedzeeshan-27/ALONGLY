@@ -44,13 +44,23 @@ export default async function RoomPage({ params }: RoomPageProps) {
     redirect("/");
   }
 
+  const isCompanion = matchRequest.companion_id === user.id;
+
+  const { data: savedCompanion } =
+    !isCompanion && matchRequest.companion_id
+      ? await supabase
+          .from("saved_companions")
+          .select("companion_id")
+          .eq("user_id", user.id)
+          .eq("companion_id", matchRequest.companion_id)
+          .maybeSingle()
+      : { data: null };
+
   const { data: messages, error: messagesError } = await supabase
     .from("messages")
     .select("id,room_id,sender_id,content,created_at")
     .eq("room_id", id)
     .order("created_at", { ascending: true });
-
-  const isCompanion = matchRequest.companion_id === user.id;
 
   return (
     <MobileAppShell
@@ -60,10 +70,13 @@ export default async function RoomPage({ params }: RoomPageProps) {
     >
       <RoomClient
         completedRedirectPath={isCompanion ? "/companion-sessions" : "/sessions"}
+        companionId={matchRequest.companion_id}
         currentUserId={user.id}
+        initialIsSavedCompanion={Boolean(savedCompanion)}
         initialMessagesError={messagesError?.message ?? null}
         initialMessages={messages ?? []}
         initialVoiceRoomUrl={matchRequest.voice_room_url ?? null}
+        isCompanion={isCompanion}
         roomId={matchRequest.id}
       />
     </MobileAppShell>

@@ -64,18 +64,18 @@ export function CompanionHandoffCard({
       {parsedContextCard ? (
         <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">
-            User context card
+            User support note
           </p>
           <div className="mt-3 grid gap-3">
             {parsedContextCard.background.trim() ? (
               <Section
-                label="Background"
+                label="Extra context"
                 value={parsedContextCard.background.trim()}
               />
             ) : null}
             {parsedContextCard.ongoingStory.trim() ? (
               <Section
-                label="Pinned ongoing story"
+                label="What's going on"
                 value={parsedContextCard.ongoingStory.trim()}
               />
             ) : null}
@@ -87,7 +87,7 @@ export function CompanionHandoffCard({
             ) : null}
             {parsedContextCard.avoid.trim() ? (
               <Section
-                label="What to avoid"
+                label="Please avoid"
                 value={parsedContextCard.avoid.trim()}
               />
             ) : null}

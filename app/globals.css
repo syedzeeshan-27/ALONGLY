@@ -25,7 +25,43 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.mobile-app-viewport {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.mobile-app-header {
+  position: relative;
+  z-index: 20;
+}
+
+@supports selector(body:has(.mobile-app-viewport)) {
+  html:has(.mobile-app-viewport),
+  body:has(.mobile-app-viewport) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-app-viewport:has(textarea:focus, input:focus) .mobile-bottom-nav {
+    display: none;
+  }
+}
+
 button, textarea, input, select { font: inherit; }
+
+.chat-composer-input {
+  max-height: 9rem;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  scrollbar-gutter: stable;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 
 .landing-surface {
   isolation: isolate;
