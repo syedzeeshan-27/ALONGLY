@@ -88,11 +88,6 @@ const faqs = [
       "Alongly is a peer support app for heavy days. It helps you share what is going on, then connects you with a real companion for an honest, unhurried conversation.",
   },
   {
-    question: "Do I need to log in to Jitsi for the voice call?",
-    answer:
-      "Yes. Alongly's voice calls run through a private Jitsi meeting room, and both the user and the companion need to be signed in to Jitsi before the call will connect. Text chat works without it - Jitsi sign-in only matters when one of you wants to switch to voice. If a call won't start, the most common reason is that one side hasn't completed the Jitsi login yet.",
-  },
-  {
     question: "How long does a typical conversation last?",
     answer:
       "There's no timer. Most first conversations settle into roughly 30 to 60 minutes, but some are shorter and some run longer. You and your companion decide together when it feels like a natural place to pause.",

@@ -16,6 +16,29 @@ import type { Database } from "@/lib/supabase/types";
 
 type MessageRow = Database["public"]["Tables"]["messages"]["Row"];
 type MatchRequestRow = Database["public"]["Tables"]["match_requests"]["Row"];
+type JitsiMeetExternalAPIOptions = {
+  roomName: string;
+  parentNode: HTMLElement;
+  width?: string;
+  height?: string;
+  userInfo?: {
+    displayName?: string;
+  };
+  configOverwrite?: Record<string, unknown>;
+  interfaceConfigOverwrite?: Record<string, unknown>;
+};
+type JitsiMeetExternalAPIInstance = {
+  dispose: () => void;
+};
+
+declare global {
+  interface Window {
+    JitsiMeetExternalAPI?: new (
+      domain: string,
+      options: JitsiMeetExternalAPIOptions,
+    ) => JitsiMeetExternalAPIInstance;
+  }
+}
 
 type RoomClientProps = {
   companionId: string | null;
@@ -30,6 +53,67 @@ type RoomClientProps = {
 };
 
 const VOICE_ROOM_STARTED = "VOICE_ROOM_STARTED";
+const JITSI_DOMAIN = "meet.jit.si";
+const JITSI_EXTERNAL_API_SRC = `https://${JITSI_DOMAIN}/external_api.js`;
+
+let jitsiApiScriptPromise: Promise<void> | null = null;
+
+function loadJitsiApiScript() {
+  if (typeof window === "undefined") {
+    return Promise.resolve();
+  }
+
+  if (window.JitsiMeetExternalAPI) {
+    return Promise.resolve();
+  }
+
+  if (!jitsiApiScriptPromise) {
+    jitsiApiScriptPromise = new Promise((resolve, reject) => {
+      const existingScript = document.querySelector<HTMLScriptElement>(
+        `script[src="${JITSI_EXTERNAL_API_SRC}"]`,
+      );
+
+      if (existingScript) {
+        existingScript.addEventListener("load", () => resolve(), {
+          once: true,
+        });
+        existingScript.addEventListener(
+          "error",
+          () => reject(new Error("Unable to load the Jitsi call embed.")),
+          { once: true },
+        );
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = JITSI_EXTERNAL_API_SRC;
+      script.onload = () => resolve();
+      script.onerror = () =>
+        reject(new Error("Unable to load the Jitsi call embed."));
+      document.head.appendChild(script);
+    });
+  }
+
+  return jitsiApiScriptPromise;
+}
+
+function createVoiceRoomUrl(roomId: string) {
+  const roomNonce =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+  return `https://${JITSI_DOMAIN}/alongly-${roomId}-${roomNonce}`;
+}
+
+function getJitsiRoomName(voiceRoomUrl: string) {
+  try {
+    const url = new URL(voiceRoomUrl);
+    return url.pathname.replace(/^\/+/, "").split("/")[0] || null;
+  } catch {
+    return null;
+  }
+}
 
 function sortMessages(messages: MessageRow[]) {
   return [...messages].sort((a, b) => {
@@ -76,6 +160,8 @@ export function RoomClient({
   const supabase = useMemo(() => createClient(), []);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const jitsiParentRef = useRef<HTMLDivElement | null>(null);
+  const jitsiApiRef = useRef<JitsiMeetExternalAPIInstance | null>(null);
   const isRefreshingMessages = useRef(false);
   const [messages, setMessages] = useState(() => sortMessages(initialMessages));
   const [draft, setDraft] = useState("");
@@ -91,10 +177,65 @@ export function RoomClient({
   );
   const voiceRoomUrlRef = useRef<string | null>(initialVoiceRoomUrl);
   const [isStartingVoiceRoom, setIsStartingVoiceRoom] = useState(false);
+  const [voiceEmbedError, setVoiceEmbedError] = useState<string | null>(null);
 
   useEffect(() => {
     voiceRoomUrlRef.current = voiceRoomUrl;
   }, [voiceRoomUrl]);
+
+  useEffect(() => {
+    const parentNode = jitsiParentRef.current;
+    const roomName = voiceRoomUrl ? getJitsiRoomName(voiceRoomUrl) : null;
+
+    if (!parentNode || !roomName) {
+      return;
+    }
+
+    let isCancelled = false;
+    setVoiceEmbedError(null);
+
+    void loadJitsiApiScript()
+      .then(() => {
+        if (isCancelled || !window.JitsiMeetExternalAPI) {
+          return;
+        }
+
+        jitsiApiRef.current?.dispose();
+        parentNode.replaceChildren();
+
+        jitsiApiRef.current = new window.JitsiMeetExternalAPI(JITSI_DOMAIN, {
+          roomName,
+          parentNode,
+          width: "100%",
+          height: "100%",
+          userInfo: {
+            displayName: isCompanion ? "Alongly companion" : "Alongly user",
+          },
+          configOverwrite: {
+            prejoinConfig: {
+              enabled: false,
+            },
+            startWithAudioMuted: false,
+            startWithVideoMuted: true,
+          },
+          interfaceConfigOverwrite: {
+            SHOW_JITSI_WATERMARK: false,
+          },
+        });
+      })
+      .catch((loadError: Error) => {
+        if (!isCancelled) {
+          setVoiceEmbedError(loadError.message);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+      jitsiApiRef.current?.dispose();
+      jitsiApiRef.current = null;
+      parentNode.replaceChildren();
+    };
+  }, [isCompanion, voiceRoomUrl]);
 
   const refreshMessages = useCallback(async () => {
     if (isRefreshingMessages.current) {
@@ -239,7 +380,7 @@ export function RoomClient({
     let nextUrl = voiceRoomUrlRef.current;
 
     if (!nextUrl) {
-      nextUrl = `https://meet.jit.si/alongly-${roomId}`;
+      nextUrl = createVoiceRoomUrl(roomId);
 
       const { error: updateError } = await supabase
         .from("match_requests")
@@ -399,6 +540,33 @@ export function RoomClient({
         </div>
       ) : null}
 
+      {voiceRoomUrl ? (
+        <div className="shrink-0 border-b border-emerald-100 bg-white px-4 py-4">
+          <div className="overflow-hidden rounded-lg border border-emerald-200 bg-stone-950 shadow-sm">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-stone-900 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-white">Voice call</p>
+                <p className="truncate text-xs font-medium text-emerald-100/75">
+                  Connected privately in this room
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-100">
+                No Jitsi login
+              </span>
+            </div>
+            <div
+              className="h-[300px] w-full bg-stone-950 sm:h-[360px]"
+              ref={jitsiParentRef}
+            />
+          </div>
+          {voiceEmbedError ? (
+            <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {voiceEmbedError}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mobile-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
         {messages.length === 0 ? (
           <div className="grid min-h-full place-items-center text-center">
@@ -420,14 +588,15 @@ export function RoomClient({
                     className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={!voiceRoomUrl}
                     onClick={() => {
-                      if (voiceRoomUrl) {
-                        window.open(voiceRoomUrl, "_blank", "noopener,noreferrer");
-                      }
+                      jitsiParentRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
                     }}
                     type="button"
                   >
                     <Phone aria-hidden="true" size={16} strokeWidth={2.4} />
-                    Join Call
+                    Show call
                   </button>
                 </div>
               </div>

@@ -13,7 +13,7 @@ Alongly is peer support, not therapy, diagnosis, emergency care, or a replacemen
 - Three-sentence companion briefing generated from the intake conversation.
 - Live companion dashboard for accepting waiting match requests.
 - Private matched rooms with realtime messages.
-- Optional voice room creation through Jitsi.
+- Optional embedded voice calls through Jitsi.
 - Mobile-first app shell, installable manifest, and branded app icons.
 
 ## Tech Stack
@@ -89,7 +89,7 @@ npm run lint     # Run ESLint
 
 - `ANTHROPIC_API_KEY` is only used server-side by `/api/chat`.
 - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are required by both server and client Supabase helpers.
-- Jitsi rooms are generated as `https://meet.jit.si/alongly-{roomId}` when a participant starts a voice room.
+- Jitsi rooms are embedded with the iFrame API and generated as unique `https://meet.jit.si/alongly-{roomId}-{nonce}` rooms when a participant starts a voice call.
 
 ## Project Structure
 
