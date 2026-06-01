@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Phone, SendHorizontal } from "lucide-react";
+import { Heart, Phone, SendHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   FormEvent,
@@ -177,6 +177,7 @@ export function RoomClient({
   );
   const voiceRoomUrlRef = useRef<string | null>(initialVoiceRoomUrl);
   const [isStartingVoiceRoom, setIsStartingVoiceRoom] = useState(false);
+  const [isVoiceCallOpen, setIsVoiceCallOpen] = useState(false);
   const [voiceEmbedError, setVoiceEmbedError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -185,7 +186,8 @@ export function RoomClient({
 
   useEffect(() => {
     const parentNode = jitsiParentRef.current;
-    const roomName = voiceRoomUrl ? getJitsiRoomName(voiceRoomUrl) : null;
+    const roomName =
+      isVoiceCallOpen && voiceRoomUrl ? getJitsiRoomName(voiceRoomUrl) : null;
 
     if (!parentNode || !roomName) {
       return;
@@ -235,7 +237,7 @@ export function RoomClient({
       jitsiApiRef.current = null;
       parentNode.replaceChildren();
     };
-  }, [isCompanion, voiceRoomUrl]);
+  }, [isCompanion, isVoiceCallOpen, voiceRoomUrl]);
 
   const refreshMessages = useCallback(async () => {
     if (isRefreshingMessages.current) {
@@ -378,6 +380,7 @@ export function RoomClient({
     setIsStartingVoiceRoom(true);
 
     let nextUrl = voiceRoomUrlRef.current;
+    let shouldAnnounceVoiceRoom = false;
 
     if (!nextUrl) {
       nextUrl = createVoiceRoomUrl(roomId);
@@ -395,6 +398,14 @@ export function RoomClient({
 
       setVoiceRoomUrl(nextUrl);
       voiceRoomUrlRef.current = nextUrl;
+      shouldAnnounceVoiceRoom = true;
+    }
+
+    setIsVoiceCallOpen(true);
+    setIsStartingVoiceRoom(false);
+
+    if (!shouldAnnounceVoiceRoom) {
+      return;
     }
 
     const announcement: MessageRow = {
@@ -413,8 +424,6 @@ export function RoomClient({
       sender_id: currentUserId,
       content: VOICE_ROOM_STARTED,
     });
-
-    setIsStartingVoiceRoom(false);
 
     if (insertError) {
       setMessages((current) => removeMessage(current, announcement.id));
@@ -486,8 +495,32 @@ export function RoomClient({
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {!isCompanion && companionId ? (
+              <button
+                aria-busy={isSavingCompanion}
+                aria-label={
+                  isSavedCompanion ? "Companion saved" : "Save companion"
+                }
+                className={`grid h-10 w-10 place-items-center rounded-full border shadow-sm transition disabled:cursor-not-allowed disabled:opacity-80 ${
+                  isSavedCompanion
+                    ? "border-teal-200 bg-teal-600 text-white"
+                    : "border-teal-100 bg-white/75 text-teal-600 hover:bg-teal-50"
+                }`}
+                disabled={isSavingCompanion || isSavedCompanion}
+                onClick={() => void saveCompanion()}
+                title={isSavedCompanion ? "Companion saved" : "Save companion"}
+                type="button"
+              >
+                <Heart
+                  aria-hidden="true"
+                  className={isSavedCompanion ? "fill-current" : undefined}
+                  size={18}
+                  strokeWidth={2.3}
+                />
+              </button>
+            ) : null}
             <button
-              aria-label="Start voice room"
+              aria-label="Start voice call"
               className="grid h-10 w-10 place-items-center rounded-full border border-emerald-200 bg-white/75 text-emerald-600 shadow-sm transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isStartingVoiceRoom || isEnding}
               onClick={() => void startVoiceRoom()}
@@ -507,66 +540,6 @@ export function RoomClient({
         </div>
       </div>
 
-      {!isCompanion && companionId ? (
-        <div className="shrink-0 border-b border-orange-100 bg-white/55 px-5 py-3">
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-teal-100 bg-teal-50/70 px-4 py-3">
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-stone-950">
-                Keep this companion for next time
-              </p>
-              <p className="mt-0.5 truncate text-xs font-medium text-stone-500">
-                Saves them to your profile for the walkthrough continuity flow.
-              </p>
-            </div>
-            <button
-              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-teal-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-stone-300"
-              disabled={isSavingCompanion || isSavedCompanion}
-              onClick={() => void saveCompanion()}
-              type="button"
-            >
-              <Heart
-                aria-hidden="true"
-                className={isSavedCompanion ? "fill-white" : undefined}
-                size={16}
-                strokeWidth={2.3}
-              />
-              {isSavedCompanion
-                ? "Saved"
-                : isSavingCompanion
-                  ? "Saving..."
-                  : "Save"}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {voiceRoomUrl ? (
-        <div className="shrink-0 border-b border-emerald-100 bg-white px-4 py-4">
-          <div className="overflow-hidden rounded-lg border border-emerald-200 bg-stone-950 shadow-sm">
-            <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-stone-900 px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-white">Voice call</p>
-                <p className="truncate text-xs font-medium text-emerald-100/75">
-                  Connected privately in this room
-                </p>
-              </div>
-              <span className="shrink-0 rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-100">
-                No Jitsi login
-              </span>
-            </div>
-            <div
-              className="h-[300px] w-full bg-stone-950 sm:h-[360px]"
-              ref={jitsiParentRef}
-            />
-          </div>
-          {voiceEmbedError ? (
-            <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {voiceEmbedError}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
       <div className="mobile-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
         {messages.length === 0 ? (
           <div className="grid min-h-full place-items-center text-center">
@@ -577,28 +550,27 @@ export function RoomClient({
         ) : null}
 
         {messages.map((message) => {
+          if (message.content === VOICE_ROOM_STARTED && voiceRoomUrl) {
+            return (
+              <div className="flex justify-center" key={message.id}>
+                <button
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-100"
+                  onClick={() => setIsVoiceCallOpen(true)}
+                  type="button"
+                >
+                  <Phone aria-hidden="true" size={16} strokeWidth={2.4} />
+                  Voice call started
+                </button>
+              </div>
+            );
+          }
+
           if (message.content === VOICE_ROOM_STARTED) {
             return (
               <div className="flex justify-center" key={message.id}>
-                <div className="flex w-full max-w-[86%] flex-col items-center gap-3 rounded-[22px] border border-emerald-200 bg-emerald-50/80 px-5 py-4 text-center shadow-sm">
-                  <p className="text-sm font-medium text-emerald-900">
-                    Voice room is ready — join when you&apos;re ready 🎙️
-                  </p>
-                  <button
-                    className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={!voiceRoomUrl}
-                    onClick={() => {
-                      jitsiParentRef.current?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center",
-                      });
-                    }}
-                    type="button"
-                  >
-                    <Phone aria-hidden="true" size={16} strokeWidth={2.4} />
-                    Show call
-                  </button>
-                </div>
+                <p className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm">
+                  Voice call started
+                </p>
               </div>
             );
           }
@@ -667,6 +639,35 @@ export function RoomClient({
           </button>
         </div>
       </form>
+
+      {isVoiceCallOpen && voiceRoomUrl ? (
+        <div className="fixed inset-0 z-50 flex flex-col bg-stone-950">
+          <div className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-stone-950 px-4 text-white">
+            <div className="min-w-0">
+              <p className="truncate text-base font-bold">Alongly call</p>
+              <p className="truncate text-xs font-medium text-emerald-100/70">
+                Jitsi voice room
+              </p>
+            </div>
+            <button
+              aria-label="Back to chat"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
+              onClick={() => setIsVoiceCallOpen(false)}
+              type="button"
+            >
+              <X aria-hidden="true" size={22} strokeWidth={2.4} />
+            </button>
+          </div>
+
+          <div className="min-h-0 flex-1 bg-black" ref={jitsiParentRef} />
+
+          {voiceEmbedError ? (
+            <p className="absolute inset-x-4 bottom-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-lg">
+              {voiceEmbedError}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }
