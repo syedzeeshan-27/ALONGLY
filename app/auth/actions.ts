@@ -1,5 +1,6 @@
 "use server";
 
+import { isAuthRetryableFetchError, type AuthError } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -32,6 +33,15 @@ function validateCredentials(email: string, password: string) {
   }
 
   return null;
+}
+
+function authErrorMessage(error: AuthError) {
+  // Network-level failures (Supabase unreachable) surface as "fetch failed".
+  if (isAuthRetryableFetchError(error)) {
+    return "We can't reach our servers right now. Please try again in a few minutes.";
+  }
+
+  return error.message;
 }
 
 async function requestOrigin() {
@@ -73,7 +83,7 @@ export async function signup(
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: authErrorMessage(error) };
   }
 
   if (!data.user) {
@@ -120,7 +130,7 @@ export async function login(
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: authErrorMessage(error) };
   }
 
   if (!data.user) {
