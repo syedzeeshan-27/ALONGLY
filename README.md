@@ -43,6 +43,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 ```
 
+You need your own Anthropic API key for the AI intake chat. Create one at [console.anthropic.com](https://console.anthropic.com/) and paste it in; a single key is enough. Keys are never committed to this repo (`.env*` is gitignored). When deploying (for example on Vercel), add the same three variables in the host's Environment Variables settings.
+
 Run the development server:
 
 ```bash
@@ -59,6 +61,9 @@ The app expects these public tables:
 - `companion_profiles`
 - `match_requests`
 - `messages`
+- `saved_companions`
+
+For a brand-new Supabase project, paste `supabase/setup.sql` into the Supabase SQL Editor and run it. It creates all the tables, access rules, the signup trigger, and realtime in one go.
 
 The current migrations in `supabase/migrations` add message room policies, realtime support for messages, voice room URLs, and companion briefing storage. Apply the migrations to the Supabase project before testing matching and room messaging.
 
