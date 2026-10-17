@@ -148,7 +148,18 @@ public/brand/               Icons and wordmark
 proxy.ts                    Next.js proxy: refreshes the session and guards routes by role
 ```
 
-Scripts: `npm run dev`, `npm run build`, `npm run start`, `npm run lint`.
+Scripts: `npm run dev`, `npm run build`, `npm run start`, `npm run lint`, `npm run test:e2e`.
+
+Tests
+-----
+
+`npm run test:e2e` runs the Playwright end-to-end suite in `e2e/`. It starts the app itself and needs a local Supabase running (`npx supabase start`); it reads the URL and keys from `supabase status`, so there is nothing to configure. No Anthropic key is used: the intake runs in demo mode. The suite covers:
+
+- the landing page and its two signup links;
+- a build with no Supabase variables at all (landing page still renders, app routes send you to `/login` with the setup notice);
+- the full match: a user signs up and finishes the intake, a companion signs up, fills in the setup form, goes online and accepts, both talk in the room, the user saves the companion and ends the conversation.
+
+The first run downloads a browser with `npx playwright install chromium`. The same checks (lint, types, build, e2e) run on every branch push (and on pull requests from forks) in GitHub Actions (`.github/workflows/ci.yml`).
 
 Safety
 ------
@@ -164,7 +175,7 @@ Honest limitations
 - **Matching is first come, first served.** Any online companion can accept any waiting request; tags are shown, not used to route.
 - **Companions see the user's email** on a waiting request so they can recognise returning people. Decide whether that is right for your deployment before inviting strangers.
 - **Email confirmation depends on your Supabase settings.** With confirmations on, new users must click the link before they can log in; the signup screen tells them so.
-- **No automated tests.** The flows above were verified by hand and with a Playwright script, not by a test suite.
+- **The tests cover the happy path.** The e2e suite exercises one full match in demo mode; there are no unit tests, and failure cases (lost realtime connection, a request accepted twice, Jitsi) are not tested.
 - **Mobile-first web app, not a native app.** It installs from the browser but there are no push notifications when the tab is closed.
 
 Licence
