@@ -15,6 +15,8 @@ test.describe("without Supabase configured", () => {
     await page.goto("/chat");
 
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByText("Supabase isn't connected yet")).toBeVisible();
+    // "isn't connected to a database" (showcase notice) or the older
+    // "Supabase isn't connected yet" setup message: either is the right page.
+    await expect(page.getByText(/isn't connected/).first()).toBeVisible();
   });
 });
