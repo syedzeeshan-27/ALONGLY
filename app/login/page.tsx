@@ -1,4 +1,8 @@
 import { BrandWordmark } from "@/app/components/brand-logo";
+import {
+  isSupabaseConfigured,
+  SUPABASE_SETUP_MESSAGE,
+} from "@/lib/supabase/config";
 import { LoginForm } from "./login-form";
 
 type LoginPageProps = {
@@ -26,9 +30,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <LoginForm
           nextPath={firstParam(params.next)}
           notice={
-            confirmationError
-              ? "That confirmation link could not be verified. Try logging in or request a new link."
-              : undefined
+            !isSupabaseConfigured()
+              ? SUPABASE_SETUP_MESSAGE
+              : confirmationError
+                ? "That confirmation link could not be verified. Try logging in or request a new link."
+                : undefined
           }
         />
       </section>

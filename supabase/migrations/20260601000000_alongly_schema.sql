@@ -69,6 +69,11 @@ create index if not exists match_requests_user_id_idx
 create index if not exists match_requests_companion_id_idx
   on public.match_requests (companion_id);
 
+-- One open (waiting) request per person at a time.
+create unique index if not exists match_requests_one_waiting_per_user_idx
+  on public.match_requests (user_id)
+  where status = 'waiting';
+
 create table if not exists public.messages (
   id         uuid primary key default gen_random_uuid(),
   room_id    uuid not null references public.match_requests (id) on delete cascade,

@@ -3,6 +3,7 @@ import { Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 
 import { BrandWordmark } from "@/app/components/brand-logo";
+import { CONTACT_HREF, CONTACT_LABEL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Changelog · Alongly",
@@ -10,7 +11,6 @@ export const metadata: Metadata = {
     "Alongly is being built in public. Here's what we've shipped so far.",
 };
 
-const CONTACT_EMAIL = "alongly26@gmail.com";
 
 type ChangelogEntry = {
   date: string;
@@ -136,12 +136,12 @@ export default function ChangelogPage() {
           <p className="text-sm text-[#65766f]">
             Have an idea or spotted something off?{" "}
             <a
-              href={`mailto:${CONTACT_EMAIL}`}
+              href={CONTACT_HREF}
               className="text-[#5d9b91] underline underline-offset-2 transition hover:text-[#4e8b82]"
             >
-              {CONTACT_EMAIL}
+              {CONTACT_LABEL}
             </a>
-            {" "}— we read every email.
+            .
           </p>
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function ChangelogPage() {
             <Link className="transition hover:text-[#243a34]" href="/">Home</Link>
             <Link className="transition hover:text-[#243a34]" href="/#how-it-works">How it works</Link>
             <Link className="transition hover:text-[#243a34]" href="/privacy">Privacy</Link>
-            <a className="transition hover:text-[#243a34]" href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
+            <a className="transition hover:text-[#243a34]" href={CONTACT_HREF}>Contact</a>
           </div>
         </div>
       </footer>

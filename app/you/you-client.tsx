@@ -174,7 +174,7 @@ function SavedCompanionsCard({
             People you can return to
           </h3>
           <p className="mt-2 text-sm leading-6 text-stone-500">
-            For the demo: this proves continuity is real, not just a one-off match.
+            Companions you save here can be found again, so support is not a one-off match.
           </p>
         </div>
       </div>

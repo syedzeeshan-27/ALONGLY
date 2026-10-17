@@ -53,7 +53,10 @@ type RoomClientProps = {
 };
 
 const VOICE_ROOM_STARTED = "VOICE_ROOM_STARTED";
-const JITSI_DOMAIN = "meet.jit.si";
+// Public meet.jit.si works for quick tests, but it limits embedded calls; point
+// this at your own Jitsi server (or a JaaS domain) for real use.
+const JITSI_DOMAIN =
+  process.env.NEXT_PUBLIC_JITSI_DOMAIN?.trim() || "meet.jit.si";
 const JITSI_EXTERNAL_API_SRC = `https://${JITSI_DOMAIN}/external_api.js`;
 
 let jitsiApiScriptPromise: Promise<void> | null = null;
@@ -622,6 +625,12 @@ export function RoomClient({
             onChange={(event) => {
               setDraft(event.target.value);
               resizeComposer(event.currentTarget);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
             }}
             placeholder="Type your message..."
             ref={composerRef}

@@ -18,10 +18,11 @@ import { RevealOnScroll } from "@/app/components/landing-animations";
 import { CompanionShowcase } from "@/app/components/companion-showcase";
 import { WhyAlonglyMarquee } from "@/app/components/why-alongly-marquee";
 import { getProfileRole, roleRedirectPath } from "@/lib/auth";
+import { CONTACT_HREF } from "@/lib/site";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
-const companionWaitlistHref =
-  "mailto:alongly26@gmail.com?subject=Companion%20pilot%20interest";
+const companionSignupHref = "/signup?role=companion";
 
 const howItWorksSteps = [
   {
@@ -34,9 +35,9 @@ const howItWorksSteps = [
   {
     Icon: Sparkles,
     step: "02",
-    detail: "Pilot live",
+    detail: "Live queue",
     title: "Route into a live queue",
-    body: "Alongly turns your answers into context and routes you into a live companion pilot.",
+    body: "Alongly turns your answers into a short brief and routes you into a live companion queue.",
   },
   {
     Icon: HandHeart,
@@ -50,11 +51,11 @@ const howItWorksSteps = [
 const trustPoints = [
   { Icon: Shield, text: "Private by default" },
   { Icon: Users, text: "Real companions" },
-  { Icon: Clock, text: "Pilot availability" },
+  { Icon: Clock, text: "Live when companions are online" },
   { Icon: Zap, text: "Free to start" },
 ];
 
-const pilotCompanionProfiles = [
+const companionStyleProfiles = [
   {
     name: "Asha",
     initials: "AS",
@@ -117,7 +118,7 @@ const footerLinks = [
   {
     title: "Company",
     links: [
-      { label: "Contact", href: "mailto:alongly26@gmail.com", external: true },
+      { label: "Contact", href: CONTACT_HREF, external: true },
       { label: "Privacy", href: "/privacy" },
       { label: "Terms", href: "/terms" },
     ],
@@ -127,9 +128,8 @@ const footerLinks = [
     links: [
       { label: "Emergency: 112", href: "tel:112", external: true },
       {
-        label: "Companion waitlist",
-        href: companionWaitlistHref,
-        external: true,
+        label: "Become a companion",
+        href: companionSignupHref,
       },
     ],
   },
@@ -140,14 +140,16 @@ const landingSectionGap = "mt-16 sm:mt-20 lg:mt-24";
 const landingSectionShell = `relative z-10 mx-auto flex w-full max-w-6xl scroll-mt-16 flex-col ${landingXPadding}`;
 
 export default async function LandingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  if (isSupabaseConfigured()) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (user) {
-    const { role } = await getProfileRole(supabase, user.id);
-    redirect(roleRedirectPath(role ?? "user"));
+    if (user) {
+      const { role } = await getProfileRole(supabase, user.id);
+      redirect(roleRedirectPath(role ?? "user"));
+    }
   }
 
   return (
@@ -227,9 +229,9 @@ export default async function LandingPage() {
             </Link>
             <Link
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#cfded8] bg-white px-5 py-3 text-sm font-bold text-[#314941] transition hover:border-[#9fc9bf] hover:bg-[#f1f8f5]"
-              href={companionWaitlistHref}
+              href={companionSignupHref}
             >
-              Join companion waitlist
+              Become a companion
               <HandHeart aria-hidden="true" size={17} strokeWidth={2.2} />
             </Link>
           </div>
@@ -257,22 +259,22 @@ export default async function LandingPage() {
               <div className="max-w-2xl">
                 <p className="inline-flex items-center gap-2 rounded-full border border-[#cfe7df] bg-[#eef8f5] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#5d9b91]">
                   <Users aria-hidden="true" size={14} strokeWidth={2.2} />
-                  Founding pilot
+                  Companion styles
                 </p>
                 <h2 className="mt-4 text-3xl font-semibold leading-tight text-[#243a34] sm:text-[2.25rem]">
-                  Three companion styles, one live human pilot behind them.
+                  Three companion styles, one shared human queue behind them.
                 </h2>
                 <p className="mt-4 max-w-xl text-base leading-7 text-[#65766f]">
-                  For the MVP, these profile cards show the kind of support Alongly is building toward. Every live request currently routes into the same real companion queue so the experience stays human while we validate demand.
+                  These profile cards show the kinds of support companions offer. Every request goes into one shared queue, and whichever companion is online picks it up, so the experience stays human.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-[#f1d9cc] bg-[#fff7f2] px-4 py-3 text-sm font-medium text-[#9a654f]">
-                Pilot preview only. Not three separate live companions yet.
+                Illustrative profiles. Real companions sign up and set their own style.
               </div>
             </div>
 
-            <CompanionShowcase profiles={pilotCompanionProfiles} />
+            <CompanionShowcase profiles={companionStyleProfiles} />
           </div>
         </RevealOnScroll>
       </section>
@@ -417,9 +419,9 @@ export default async function LandingPage() {
               </Link>
               <Link
                 className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#cfded8] bg-white/70 px-5 py-3 text-sm font-bold text-[#314941] transition hover:bg-[#f1f8f5]"
-                href={companionWaitlistHref}
+                href={companionSignupHref}
               >
-                Join companion waitlist
+                Become a companion
               </Link>
             </div>
           </div>

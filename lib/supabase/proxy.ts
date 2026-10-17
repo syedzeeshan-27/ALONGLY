@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getProfileRole, roleRedirectPath } from "@/lib/auth";
-import { getSupabaseConfig } from "@/lib/supabase/config";
+import { getSupabaseConfig, isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Database, ProfileRole } from "@/lib/supabase/types";
 
 const authRoutes = ["/login", "/signup"];
@@ -11,6 +11,19 @@ const protectedRoutes = [
   "/companion-dashboard",
   "/companion-setup",
   "/room",
+];
+
+// Every page that needs a signed-in account (some check auth themselves).
+const appRoutes = [
+  ...protectedRoutes,
+  "/home",
+  "/talk",
+  "/sessions",
+  "/you",
+  "/breathe",
+  "/companion-briefings",
+  "/companion-profile",
+  "/companion-sessions",
 ];
 
 function matchesRoute(pathname: string, route: string) {
@@ -64,6 +77,21 @@ function redirectWithAuthCookies(url: URL, response: NextResponse) {
 }
 
 export async function updateSession(request: NextRequest) {
+  // Without Supabase keys the public pages still work; app pages send people
+  // to the login screen, which explains what to set up.
+  if (!isSupabaseConfigured()) {
+    const { pathname } = request.nextUrl;
+
+    if (appRoutes.some((route) => matchesRoute(pathname, route))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    return NextResponse.next({ request });
+  }
+
   const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
   let response = NextResponse.next({ request });
 

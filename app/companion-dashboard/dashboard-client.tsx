@@ -72,7 +72,7 @@ function getAlertCopy(permission: AlertPermission) {
     return "This browser does not support desktop notifications for the dashboard flow.";
   }
 
-  return "Turn on browser alerts, then keep this dashboard open while you're online. On Vercel, HTTPS is enough for this MVP.";
+  return "Turn on browser alerts, then keep this dashboard open while you're online. Notifications need HTTPS (or localhost).";
 }
 
 export function CompanionDashboardClient({
@@ -229,6 +229,13 @@ export function CompanionDashboardClient({
 
     void loadWaitingRequests();
 
+    // Realtime only tells this companion about rows they can read, so a request
+    // another companion accepted would otherwise stay on the list. Refresh it
+    // every so often as a backstop.
+    const pollId = window.setInterval(() => {
+      void loadWaitingRequests();
+    }, 10000);
+
     const channel = supabase
       .channel("waiting-match-requests")
       .on(
@@ -306,6 +313,7 @@ export function CompanionDashboardClient({
 
     return () => {
       isActive = false;
+      window.clearInterval(pollId);
       void supabase.removeChannel(channel);
     };
   }, [isOnline, supabase]);
@@ -485,7 +493,7 @@ export function CompanionDashboardClient({
           )}
 
           <span className="inline-flex items-center rounded-full border border-stone-200 bg-white px-4 text-xs font-semibold text-stone-500">
-            Works best with this Chrome tab open on Vercel HTTPS
+            Works best with this tab open on an HTTPS site
           </span>
         </div>
 

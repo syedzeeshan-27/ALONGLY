@@ -11,6 +11,10 @@ import {
   roleRedirectPath,
   upsertProfileRole,
 } from "@/lib/auth";
+import {
+  isSupabaseConfigured,
+  SUPABASE_SETUP_MESSAGE,
+} from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthFormState = {
@@ -57,6 +61,10 @@ export async function signup(
   const password = fieldValue(formData, "password");
   const roleValue = fieldValue(formData, "role");
   const nextPath = fieldValue(formData, "next");
+  if (!isSupabaseConfigured()) {
+    return { error: SUPABASE_SETUP_MESSAGE };
+  }
+
   const credentialError = validateCredentials(email, password);
 
   if (credentialError) {
@@ -117,6 +125,10 @@ export async function login(
   const email = fieldValue(formData, "email");
   const password = fieldValue(formData, "password");
   const nextPath = fieldValue(formData, "next");
+  if (!isSupabaseConfigured()) {
+    return { error: SUPABASE_SETUP_MESSAGE };
+  }
+
   const credentialError = validateCredentials(email, password);
 
   if (credentialError) {

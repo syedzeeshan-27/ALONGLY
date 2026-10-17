@@ -5,8 +5,10 @@ import { getSupabaseConfig } from "./config";
 import type { Database } from "./types";
 
 export async function createClient() {
-  const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
+  // Read cookies first: it marks the page as dynamic, so `next build` does not
+  // try to prerender auth pages (and fail) when the env vars are not set yet.
   const cookieStore = await cookies();
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
 
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {

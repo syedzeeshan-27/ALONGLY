@@ -1,10 +1,15 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 
 import { getProfileRole } from "@/lib/auth";
+import { demoBriefing, demoIntakeReply } from "@/lib/intake-demo";
 import { createClient } from "@/lib/supabase/server";
 
-const ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
+// Override with ANTHROPIC_MODEL (e.g. a cheaper model) if you like.
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL?.trim() || "claude-opus-5-5";
+
+// Models that accept the server-side refusal fallback ("default" routing).
+const FALLBACK_MODELS = ["claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "claude-sonnet-5-5"];
 
 const SYSTEM_PROMPT = `You are a warm non-clinical companion. Make the user feel heard in 4-5 exchanges. Naturally identify three things:
 1. experience_tag: what they're going through (loneliness/anxiety/grief/burnout)
@@ -25,18 +30,6 @@ type ChatMessage = {
   content: string;
 };
 
-type AnthropicTextBlock = {
-  type: "text";
-  text: string;
-};
-
-type AnthropicResponse = {
-  content?: AnthropicTextBlock[];
-  error?: {
-    message?: string;
-  };
-};
-
 function isChatMessage(value: unknown): value is ChatMessage {
   if (!value || typeof value !== "object") {
     return false;
@@ -50,14 +43,33 @@ function isChatMessage(value: unknown): value is ChatMessage {
   );
 }
 
-function extractText(data: AnthropicResponse | null): string {
-  return (
-    data?.content
-      ?.filter((block) => block.type === "text")
-      .map((block) => block.text)
-      .join("\n")
-      .trim() ?? ""
-  );
+async function askClaude(
+  client: Anthropic,
+  system: string,
+  messages: ChatMessage[],
+): Promise<string> {
+  const useFallbacks = FALLBACK_MODELS.includes(ANTHROPIC_MODEL);
+  const response = await client.beta.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 16000,
+    system,
+    messages,
+    // A short, warm chat reply does not need deep thinking.
+    output_config: { effort: "low" },
+    ...(useFallbacks
+      ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const }
+      : {}),
+  });
+
+  if (response.stop_reason === "refusal") {
+    throw new Error("Claude could not respond to that. Please try rephrasing.");
+  }
+
+  return response.content
+    .filter((block) => block.type === "text")
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
 }
 
 function formatTranscript(conversation: ChatMessage[]): string {
@@ -70,7 +82,7 @@ function formatTranscript(conversation: ChatMessage[]): string {
 }
 
 async function generateBriefing(
-  apiKey: string,
+  client: Anthropic | null,
   conversation: ChatMessage[],
 ): Promise<string | null> {
   const transcript = formatTranscript(conversation);
@@ -79,53 +91,39 @@ async function generateBriefing(
     return null;
   }
 
+  if (!client) {
+    return demoBriefing(conversation);
+  }
+
   try {
-    const response = await fetch(ANTHROPIC_MESSAGES_URL, {
-      method: "POST",
-      headers: {
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-        "x-api-key": apiKey,
+    const briefing = await askClaude(client, BRIEFING_SYSTEM_PROMPT, [
+      {
+        role: "user",
+        content: `Here is the full conversation so far between the person and the AI companion. Write the 3-sentence briefing exactly as the instructions describe.\n\n---\n${transcript}\n---`,
       },
-      body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 500,
-        system: BRIEFING_SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: `Here is the full conversation so far between the person and the AI companion. Write the 3-sentence briefing exactly as the instructions describe.\n\n---\n${transcript}\n---`,
-          },
-        ],
-      }),
-    });
+    ]);
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
-      console.error(
-        "[chat] briefing call failed",
-        response.status,
-        errorBody.slice(0, 500),
-      );
-      return null;
-    }
-
-    const data = (await response.json().catch(() => null)) as
-      | AnthropicResponse
-      | null;
-
-    const briefing = extractText(data);
-
-    if (!briefing.length) {
-      console.error("[chat] briefing call returned empty text");
-      return null;
-    }
-
-    return briefing;
+    return briefing.length ? briefing : null;
   } catch (error) {
-    console.error("[chat] briefing call threw", error);
+    console.error("[chat] briefing call failed", error);
     return null;
   }
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Anthropic.AuthenticationError) {
+    return "The ANTHROPIC_API_KEY on the server is invalid.";
+  }
+
+  if (error instanceof Anthropic.RateLimitError) {
+    return "Too many requests right now. Please wait a moment and try again.";
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "Claude could not respond right now. Please try again.";
 }
 
 export async function POST(request: Request) {
@@ -144,14 +142,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "Missing ANTHROPIC_API_KEY" },
-      { status: 500 },
-    );
-  }
+  // No key means demo mode: a scripted companion so the app still works end to end.
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  const client = apiKey ? new Anthropic({ apiKey }) : null;
 
   const body = (await request.json().catch(() => null)) as {
     messages?: unknown;
@@ -161,7 +154,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Messages are required" }, { status: 400 });
   }
 
-  const messages = body.messages.filter(isChatMessage).slice(-14);
+  // The chat UI opens with an assistant greeting, but the API needs the
+  // conversation to start with a user turn, so drop any leading assistant text.
+  const allMessages = body.messages.filter(isChatMessage);
+  const firstUserIndex = allMessages.findIndex((entry) => entry.role === "user");
+  const conversation = firstUserIndex === -1 ? [] : allMessages.slice(firstUserIndex);
+  let messages = conversation.slice(-14);
+
+  while (messages.length && messages[0].role !== "user") {
+    messages = messages.slice(1);
+  }
 
   if (!messages.length || messages[messages.length - 1].role !== "user") {
     return NextResponse.json(
@@ -170,37 +172,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const anthropicResponse = await fetch(ANTHROPIC_MESSAGES_URL, {
-    method: "POST",
-    headers: {
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-    },
-    body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 700,
-      system: SYSTEM_PROMPT,
-      messages,
-    }),
-  });
+  let message: string;
 
-  const data = (await anthropicResponse.json().catch(() => null)) as
-    | AnthropicResponse
-    | null;
-
-  if (!anthropicResponse.ok) {
-    return NextResponse.json(
-      {
-        error:
-          data?.error?.message ??
-          "Claude could not respond right now. Please try again.",
-      },
-      { status: anthropicResponse.status },
-    );
+  try {
+    message = client
+      ? await askClaude(client, SYSTEM_PROMPT, messages)
+      : demoIntakeReply(conversation);
+  } catch (error) {
+    console.error("[chat] intake call failed", error);
+    const status = error instanceof Anthropic.APIError ? error.status ?? 502 : 502;
+    return NextResponse.json({ error: errorMessage(error) }, { status });
   }
-
-  const message = extractText(data);
 
   if (!message) {
     return NextResponse.json(
@@ -215,13 +197,13 @@ export async function POST(request: Request) {
   if (tagMatch) {
     const assistantWithoutTags = message.replace(tagMatch[0], "").trim();
     const briefingConversation: ChatMessage[] = [
-      ...messages,
+      ...conversation,
       ...(assistantWithoutTags
         ? [{ role: "assistant" as const, content: assistantWithoutTags }]
         : []),
     ];
 
-    briefing = await generateBriefing(apiKey, briefingConversation);
+    briefing = await generateBriefing(client, briefingConversation);
   }
 
   return NextResponse.json({ message, briefing });

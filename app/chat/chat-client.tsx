@@ -382,6 +382,12 @@ export function ChatClient({ userEmail, userId }: ChatClientProps) {
               setDraft(event.target.value);
               resizeComposer(event.currentTarget);
             }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
             placeholder="Type your message..."
             ref={composerRef}
             rows={1}

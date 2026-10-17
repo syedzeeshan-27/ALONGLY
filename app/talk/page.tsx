@@ -5,11 +5,9 @@ import { getProfileRole, roleRedirectPath } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { MatchWaiting } from "./match-waiting";
 
-// Demo shortcut for the 3 showcase companions (Asha / Noor / Rey).
-// Unlike "Find a companion" (which keeps the full AI onboarding), tapping
-// "Talk to this style" creates a live request directly and waits for the
-// founding companion to accept it from the dashboard — no AI intake.
-// Everything else in the app is unchanged.
+// Direct route for the "Talk to someone" / "Talk to this style" buttons.
+// Unlike "Find a companion" (which keeps the full AI intake), this creates a
+// live request straight away and waits for any online companion to accept it.
 export default async function TalkPage({
   searchParams,
 }: {
@@ -69,8 +67,23 @@ export default async function TalkPage({
       status: "waiting",
     });
 
-    // If something goes wrong, fall back to the normal flow rather than break.
-    if (insertError) {
+    // The database allows one waiting request per person, so a double render
+    // (or a quick refresh) lands here: reuse the request that already exists.
+    if (insertError?.code === "23505") {
+      const { data: openRequest } = await supabase
+        .from("match_requests")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "waiting")
+        .maybeSingle();
+
+      if (openRequest) {
+        requestId = openRequest.id;
+      } else {
+        redirect("/chat");
+      }
+    } else if (insertError) {
+      // Anything else: fall back to the normal flow rather than break.
       redirect("/chat");
     }
   }

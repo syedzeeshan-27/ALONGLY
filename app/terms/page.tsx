@@ -3,6 +3,7 @@ import { FileText } from "lucide-react";
 import type { Metadata } from "next";
 
 import { BrandWordmark } from "@/app/components/brand-logo";
+import { CONTACT_HREF, CONTACT_LABEL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms of Use · Alongly",
@@ -10,7 +11,6 @@ export const metadata: Metadata = {
     "The terms that apply when you use Alongly — plain language, honestly written.",
 };
 
-const CONTACT_EMAIL = "alongly26@gmail.com";
 
 const sections = [
   {
@@ -169,9 +169,9 @@ export default function TermsPage() {
             <span aria-hidden="true">·</span>
             <a
               className="transition hover:text-[#243a34]"
-              href={`mailto:${CONTACT_EMAIL}`}
+              href={CONTACT_HREF}
             >
-              {CONTACT_EMAIL}
+              {CONTACT_LABEL}
             </a>
           </div>
         </div>
@@ -245,12 +245,12 @@ export default function TermsPage() {
               <p className="text-sm text-[#65766f]">
                 Questions about these terms?{" "}
                 <a
-                  href={`mailto:${CONTACT_EMAIL}`}
+                  href={CONTACT_HREF}
                   className="text-[#5d9b91] underline underline-offset-2 transition hover:text-[#4e8b82]"
                 >
-                  {CONTACT_EMAIL}
+                  {CONTACT_LABEL}
                 </a>
-                {" "}— we read every email.
+                .
               </p>
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function TermsPage() {
             <Link className="transition hover:text-[#243a34]" href="/">Home</Link>
             <Link className="transition hover:text-[#243a34]" href="/#how-it-works">How it works</Link>
             <Link className="transition hover:text-[#243a34]" href="/privacy">Privacy</Link>
-            <a className="transition hover:text-[#243a34]" href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
+            <a className="transition hover:text-[#243a34]" href={CONTACT_HREF}>Contact</a>
           </div>
         </div>
       </footer>
