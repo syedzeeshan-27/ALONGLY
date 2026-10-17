@@ -1,5 +1,7 @@
+import { BackendMissingNotice } from "@/app/components/backend-missing-notice";
 import { BrandWordmark } from "@/app/components/brand-logo";
 import { isProfileRole } from "@/lib/auth";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { ProfileRole } from "@/lib/supabase/types";
 import { SignupForm } from "./signup-form";
 
@@ -23,7 +25,11 @@ export default async function SignupPage({
           </h1>
         </div>
 
-        <SignupForm initialRole={initialRole} nextPath={nextPath} />
+        {isSupabaseConfigured() ? (
+          <SignupForm initialRole={initialRole} nextPath={nextPath} />
+        ) : (
+          <BackendMissingNotice />
+        )}
       </section>
     </main>
   );
