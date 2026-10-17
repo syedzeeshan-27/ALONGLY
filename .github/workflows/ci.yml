@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
 
 concurrency:
@@ -12,6 +12,9 @@ concurrency:
 jobs:
   checks:
     name: Lint, types, build, e2e
+    # Every branch push runs the checks; the pull_request event is only needed
+    # for PRs from forks, so skip it for same-repo PRs to avoid double runs.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

@@ -162,7 +162,7 @@ Tests
 - a build with no Supabase variables at all (landing page still renders, app routes send you to `/login` with the setup notice);
 - the full match: a user signs up and finishes the intake, a companion signs up, fills in the setup form, goes online and accepts, both talk in the room, the user saves the companion and ends the conversation.
 
-The first run downloads a browser with `npx playwright install chromium`. The same checks (lint, types, build, e2e) run on every push and pull request in GitHub Actions (`.github/workflows/ci.yml`).
+The first run downloads a browser with `npx playwright install chromium`. The same checks (lint, types, build, e2e) run on every branch push (and on pull requests from forks) in GitHub Actions (`.github/workflows/ci.yml`).
 
 Safety
 ------
