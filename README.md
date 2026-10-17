@@ -10,8 +10,6 @@ Alongly is a small Next.js + Supabase app. Someone who is struggling has a short
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Realtime-3ecf8e?logo=supabase&logoColor=white)](https://supabase.com)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fsyedzeeshan-27%2FALONGLY&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY&envDescription=Supabase%20project%20URL%20and%20anon%20key.%20Run%20supabase%2Fmigrations%20first.&envLink=https%3A%2F%2Fgithub.com%2Fsyedzeeshan-27%2FALONGLY%23deploy-your-own&project-name=alongly&repository-name=alongly)
 
-**Live demo:** https://alongly.vercel.app <!-- TODO: replace with your Vercel URL after deploying (see "Deploy your own") -->
-
 * * *
 
 ![Both sides of an Alongly match: the user's intake and room on the left, the companion's queue and room on the right](docs/media/demo.gif)
@@ -115,8 +113,7 @@ Deploy your own
 2. Set up Supabase (Option B above) and run the schema SQL.
 3. Click the **Deploy with Vercel** button at the top, or in Vercel choose **Add New → Project** and import the repo. Vercel detects Next.js; keep the defaults.
 4. Add the environment variables when Vercel asks: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and optionally `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_JITSI_DOMAIN`.
-5. Deploy. Then in Supabase go to **Authentication → URL Configuration** and add your Vercel URL (for example `https://alongly.vercel.app`) as the Site URL and to the redirect list, so confirmation links come back to the right place.
-6. Put the URL in the **Live demo** line of this README.
+5. Deploy. Then in Supabase go to **Authentication → URL Configuration** and add your Vercel URL as the Site URL and to the redirect list, so confirmation links come back to the right place.
 
 **Keeping a free Supabase project awake.** Free projects pause after about a week without traffic, and the app then shows "We can't reach our servers". The workflow in `.github/workflows/keep-supabase-awake.yml` pings the project twice a week; turn it on by adding two repository secrets, `SUPABASE_URL` and `SUPABASE_ANON_KEY` (Settings → Secrets and variables → Actions).
 
