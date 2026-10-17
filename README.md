@@ -118,6 +118,10 @@ Deploy your own
 5. Deploy. Then in Supabase go to **Authentication → URL Configuration** and add your Vercel URL (for example `https://alongly.vercel.app`) as the Site URL and to the redirect list, so confirmation links come back to the right place.
 6. Put the URL in the **Live demo** line of this README.
 
+**Keeping a free Supabase project awake.** Free projects pause after about a week without traffic, and the app then shows "We can't reach our servers". The workflow in `.github/workflows/keep-supabase-awake.yml` pings the project twice a week; turn it on by adding two repository secrets, `SUPABASE_URL` and `SUPABASE_ANON_KEY` (Settings → Secrets and variables → Actions).
+
+**Showcase deploy with no database.** If you only want the site up as a portfolio piece, deploy it with no Supabase variables at all. The landing, changelog, privacy and terms pages work, and login/signup show visitors a notice pointing at the demo and the code instead of a broken form.
+
 Project layout
 --------------
 

@@ -1,0 +1,36 @@
+# Free Supabase projects pause after about a week without traffic. This pings
+# the project a few times a week so a hosted demo stays up. Add two repository
+# secrets to turn it on: SUPABASE_URL and SUPABASE_ANON_KEY (same values as in
+# .env.local). Without them the job simply skips.
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: "17 6 * * 1,4" # Mondays and Thursdays, 06:17 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    if: ${{ vars.KEEP_SUPABASE_AWAKE != 'false' }}
+    steps:
+      - name: Ping the Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "SUPABASE_URL / SUPABASE_ANON_KEY secrets not set; nothing to ping."
+            exit 0
+          fi
+          # A real query counts as activity; anon can read nothing here, so an
+          # empty list (200) is the expected answer.
+          code=$(curl -s -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "Supabase answered $code"
+          case "$code" in
+            2*|401|403) exit 0 ;;
+            *) exit 1 ;;
+          esac
